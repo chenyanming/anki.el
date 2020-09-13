@@ -13,9 +13,6 @@
       (format-time-string "<%Y-%m-%d %a %H:%M:%S>"
                           (seconds-to-time (string-to-number input))) ))
 
-(defun anki-decode-did (input decks)
-  (if input
-      (gethash input decks)))
 
 
 

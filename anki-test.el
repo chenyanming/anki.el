@@ -1119,9 +1119,12 @@
 (completing-read "Browse Cards: " (anki-format-cards))
 (gethash "1573359373068" (anki-parse-decks) )
 (gethash "id" (gethash "1581830143591" (anki-parse-decks) ) )
+(cl-loop for name in (gethash "flds" (gethash "1434531251878" (anki-parse-models))) collect
+         (gethash "name" name))
 
 (benchmark 1 '(anki-parse-cards))
 (benchmark 1 '(anki-parse-decks))
+(benchmark 1 '(anki-parse-models))
 (benchmark 1 '(anki-format-cards))
 
 (profiler-start 'cpu)
@@ -1130,3 +1133,5 @@
 (profiler-report)
 
 (insert "")
+
+(anki-decode-mid "1434531251878" (anki-parse-models) )
