@@ -91,11 +91,11 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
 
         (goto-char (point-min))
         (while (re-search-forward "src=\"\\(.*?\\)\"" nil t)
-          (replace-match (format "src=\"%s%s\"" anki-media-dir (match-string 1))))
+          (replace-match (format "src=\"%s%s\"" (concat (file-name-as-directory anki-collection-dir) "collection.media/") (match-string 1))))
 
         (goto-char (point-min))
         (while (re-search-forward "\\[sound:\\(.*?\\)\\]" nil t)
-          (replace-match (format "<a href=\"%s%s\">Play</a>" anki-media-dir (match-string 1))))
+          (replace-match (format "<a href=\"%s%s\">Play</a>" (concat (file-name-as-directory anki-collection-dir) "collection.media/") (match-string 1))))
 
 
         (insert "\n")

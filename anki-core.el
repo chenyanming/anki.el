@@ -40,12 +40,7 @@ ON cards.nid = notes.id
   :group 'anki
   :type 'string)
 
-(defcustom anki-db-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac/collection.anki2"
-  "SQL separator, used in parsing SQL result into list."
-  :group 'anki
-  :type 'string)
-
-(defcustom anki-media-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac/collection.media/"
+(defcustom anki-collection-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac"
   "SQL separator, used in parsing SQL result into list."
   :group 'anki
   :type 'string)
@@ -54,12 +49,12 @@ ON cards.nid = notes.id
   "Query calibre databse and return the result.
 Argument SQL-QUERY is the sqlite sql query string."
   (interactive)
-  (if (file-exists-p anki-db-dir)
+  (if (file-exists-p (concat (file-name-as-directory anki-collection-dir) "collection.anki2"))
       (let ((cmd (format "%s -separator %s -newline %s -list -nullvalue \"\" -noheader %s \"%s\""
                          sql-sqlite-program
                          anki-sql-separator
                          anki-sql-newline
-                         (shell-quote-argument (expand-file-name anki-db-dir))
+                         (shell-quote-argument (expand-file-name (concat (file-name-as-directory anki-collection-dir) "collection.anki2")))
                          sql-query)))
         (shell-command-to-string cmd)) nil))
 
