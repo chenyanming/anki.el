@@ -19,9 +19,9 @@ time."
   "Return the appropriate buffer name for ENTRY.
 The result depends on the value of `anki-show-unique-buffers'."
   (if anki-show-unique-buffers
-      (format "*anki-entry-<%s>*"
+      (format "*anki-card-<%s>*"
               (gethash 'id entry))
-    "*anki-entry*"))
+    "*anki-card*"))
 
 (define-derived-mode anki-show-mode fundamental-mode "anki-show"
   "Mode for displaying book entry details.
@@ -29,7 +29,7 @@ The result depends on the value of `anki-show-unique-buffers'."
   (setq buffer-read-only t)
   (buffer-disable-undo))
 
-(defcustom anki-show-entry-switch #'switch-to-buffer-other-window
+(defcustom anki-show-card-switch #'switch-to-buffer-other-window
   "Function used to display the calibre entry buffer."
   :group 'anki
   :type '(choice (function-item switch-to-buffer-other-window)
@@ -37,7 +37,7 @@ The result depends on the value of `anki-show-unique-buffers'."
                  (function-item pop-to-buffer)
                  function))
 
-(defun anki-show-entry (entry &optional switch)
+(defun anki-show-card (entry &optional switch)
   "Display ENTRY in the current buffer.
 Optional argument SWITCH to switch to *anki-search* buffer to other window."
   (unless (eq major-mode 'anki-show-mode)
@@ -57,11 +57,10 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
         (define-key file-map [mouse-3] 'anki-file-mouse-3)
         (erase-buffer)
         (setq beg (point))
-        (insert id)
+        ;; (insert id)
         (insert "\n")
         (setq end (point))
-        (put-text-property beg end 'anki-entry entry)
-
+        (put-text-property beg end 'anki-card entry)
 
         (setq c-beg (point))
         (dolist (field (mapcar* 'cons model-names (split-string flds "\037")))
@@ -86,10 +85,10 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
         (anki-show-mode)
         ;; (shr-render-region (point-min) (point-max))
         (anki-render-html)
-        (setq anki-show-entry entry)
+        (setq anki-show-card entry)
         (goto-char (point-min))))
     (unless (eq major-mode 'anki-show-mode)
-      (funcall anki-show-entry-switch buff)
+      (funcall anki-show-card-switch buff)
       (when switch
         (switch-to-buffer-other-window (set-buffer (anki-search--buffer-name)))
         (goto-char original)))))
@@ -191,16 +190,16 @@ that this variable only has an effect in Emacs 25.1 or greater."
   :type 'hook
   :group 'anki)
 
-(defun anki-entry-quit ()
-  "Quit the *anki-entry*."
+(defun anki-card-quit ()
+  "Quit the *anki-card*."
   (interactive)
   (when (eq major-mode 'anki-show-mode)
-    (if (get-buffer "*anki-entry*")
-        (kill-buffer "*anki-entry*"))))
+    (if (get-buffer "*anki-card*")
+        (kill-buffer "*anki-card*"))))
 
 (defun anki-preview-card ()
   (interactive)
-  (anki-show-entry (caar (anki-find-card-at-point) )))
+  (anki-show-card (anki-find-card-at-point) ))
 
 (defun anki-models-names (model)
   (cl-loop for name in (gethash "flds" model) collect

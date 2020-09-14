@@ -22,7 +22,7 @@ SELECT cards.*, notes.*
 FROM cards
 LEFT JOIN  notes
 ON cards.nid = notes.id
-LIMIT 10000"
+"
 
 
   "TODO anki database query statement.")
@@ -199,7 +199,11 @@ Argument QUERY-RESULT is the query result generate by sqlite."
 (defun anki-format-cards ()
   "Format all cards."
   (cl-loop for card in (anki-parse-cards) collect
-           (list (anki-format-card-hash-table card) card))
+           ;; (hash-table-p card)
+           (if (hash-table-p card)
+               (let ((table card))
+                 (puthash 'card-format (anki-format-card-hash-table card) card)
+                 table)))
   ;; (let ((cards (anki-parse-cards)) result)
   ;;   (dolist (card cards result)
   ;;     ;; (push (list (anki-format-card-plist card) card) result)
@@ -220,10 +224,10 @@ Argument QUERY-RESULT is the query result generate by sqlite."
              (did (gethash 'did card))
              (deck-name (gethash "name" did))
              (mid (gethash 'mid card))
-             (model-flds (gethash "flds" mid))
-             )
+             (model-name (gethash "name" mid))
+             (model-flds (gethash "flds" mid)))
         ;; (format "%s  %s" deck-name (replace-regexp-in-string "\037" "   " flds))
-        (format "%s  %s" deck-name sfld))))
+        (format "%s  %s  %s" deck-name model-name sfld))))
 
 (defun anki-decode-did (input decks)
   (if input
@@ -232,5 +236,28 @@ Argument QUERY-RESULT is the query result generate by sqlite."
 (defun anki-decode-mid (input models)
   (if input
       (gethash input models)))
+
+(defun anki-list-decks ()
+  (interactive)
+  (let* ((deck (let* ((pdecks (anki-parse-decks))
+                      (vdecks (hash-table-values pdecks)))
+                 (cl-loop for deck in vdecks collect
+                          (cons (gethash "name" deck) (gethash "id" deck)))))
+         (selected-did (cdr (assoc (completing-read "Decks: " deck) deck))))
+    (setq anki-search-entries (cl-loop for entry in anki-full-entries collect
+             (if (hash-table-p entry)
+                 (let ((table-did (gethash 'did entry)))
+                   (if (hash-table-p table-did)
+                       (if (equal selected-did (gethash "id" table-did))
+                           entry))))) ))
+  (anki-browser))
+
+(defun anki-list-models ()
+  (interactive)
+  (completing-read "Models: "
+                   (let* ((pmodels (anki-parse-models))
+                          (vmodels (hash-table-values pmodels)))
+                     (cl-loop for model in vmodels collect
+                              (cons (gethash "name" model) (gethash "id" model))))))
 
 (provide 'anki-core)

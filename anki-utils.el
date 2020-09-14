@@ -20,9 +20,9 @@
   "Find card at point and return the list."
   (interactive)
   (if (eq major-mode 'anki-search-mode)
-      (list (cdr (or (get-text-property (point) 'anki-entry nil)
-                     (get-text-property (point) 'anki-detail nil)
-                     (get-text-property (point) 'anki-compact nil))))
-    (list (get-text-property (point-min) 'anki-entry nil) )))
+      (or (get-text-property (point) 'anki-entry nil)
+          (get-text-property (point) 'anki-detail nil)
+          (get-text-property (point) 'anki-compact nil))
+    (get-text-property (point-min) 'anki-entry nil)))
 
 (provide 'anki-utils)

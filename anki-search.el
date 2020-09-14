@@ -101,14 +101,14 @@ When live editing the filter, it is bound to :live.")
   "Enter calibre Search Buffer."
   (interactive)
   (let ((cand
-         ;; (if anki-search-entries
-         ;;     anki-search-entries
-         ;;   (progn
-         ;;     (setq anki-search-entries (anki-format-cards))
-         ;;     (setq anki-full-entries anki-search-entries)))
-         (progn
-           (setq anki-search-entries (anki-format-cards))
-           (setq anki-full-entries anki-search-entries))
+         (if anki-search-entries
+             anki-search-entries
+           (progn
+             (setq anki-search-entries (anki-format-cards))
+             (setq anki-full-entries anki-search-entries)))
+         ;; (progn
+         ;;   (setq anki-search-entries (anki-format-cards))
+         ;;   (setq anki-full-entries anki-search-entries))
          ))
     (cond ((not cand)
            (message "INVALID ANKI"))
@@ -122,29 +122,30 @@ When live editing the filter, it is bound to :live.")
            (goto-char (point-min))
            (unless (equal cand '(""))   ; not empty library
              (dolist (item cand)
-               (let (beg end)
-                 (setq beg (point))
-                 (insert (concat
-                                 (if (stringp (car item))
-                                     (car item) "")
-                                ))
-                 ;; (anki-detail-view-insert-image item)
-                 (setq end (point))
-                 (put-text-property beg end 'anki-entry item)
-                 ;; (require 'shr)
-                 ;; (if (fboundp 'shr-render-region)
-                 ;;     (shr-render-region beg end))
-                 (insert "\n")))
+               (if (hash-table-p item)
+                   (let (beg end)
+                     (setq beg (point))
+                     (insert
+                      (concat
+                       (if (stringp (gethash 'card-format item))
+                           (gethash 'card-format item) "")))
+                     ;; (anki-detail-view-insert-image item)
+                     (setq end (point))
+                     (put-text-property beg end 'anki-entry item)
+                     ;; (require 'shr)
+                     ;; (if (fboundp 'shr-render-region)
+                     ;;     (shr-render-region beg end))
+                     (insert "\n"))))
              (goto-char (point-min)))
            (unless (eq major-mode 'anki-search-mode)
              (anki-search-mode))))))
 
 (defun anki-search-quit ()
-  "Quit *anki-entry* or *anki-search*."
+  "Quit *anki-card* or *anki-search*."
   (interactive)
   (when (eq major-mode 'anki-search-mode)
-    (cond ((get-buffer "*anki-entry*")
-           (pop-to-buffer "*anki-entry*")
+    (cond ((get-buffer "*anki-card*")
+           (pop-to-buffer "*anki-card*")
            (if (< (length (window-prev-buffers)) 2)
                (kill-buffer-and-window)
              (kill-buffer)))
