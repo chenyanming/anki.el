@@ -10,6 +10,8 @@
 
 * Description
 Yet another Anki Emacs Client.
+#+attr_org: :width 600px
+[[file:img/anki.png]]
 
 * Features
 Current status:
