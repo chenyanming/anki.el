@@ -6,7 +6,11 @@
 * Table of Contents :TOC_3:noexport:
 - [[#description][Description]]
 - [[#features][Features]]
-- [[#configuration][Configuration]]
+- [[#installation][Installation]]
+  - [[#clone-to-path][Clone to path]]
+  - [[#require][require]]
+  - [[#use-package][use-package]]
+- [[#usage][Usage]]
 
 * Description
 Yet another Anki Emacs Client.
@@ -21,9 +25,23 @@ Current status:
 - Preview Card
 - Play audio
  
-* Configuration
-Clone to ~"=/.emacs.d/lisp/anki/"=
+* Installation
+** Clone to path
+#+BEGIN_SRC sh
+git clone git@github.com:chenyanming/anki.el.git ~/.emacs.d/lisp/anki/
+#+END_SRC
 
+** require
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path "~/.emacs.d/lisp/anki/")
+(require 'anki)
+(setq sql-sqlite-program "/usr/bin/sqlite3")
+(setq anki-collection-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac")
+(setq anki-audio-player (or (executable-find "aplay") (executable-find "afplay")))
+(setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
+#+END_SRC
+
+** use-package
 #+BEGIN_SRC emacs-lisp
 (use-package anki
   :load-path "~/.emacs.d/lisp/anki/"
@@ -34,8 +52,9 @@ Clone to ~"=/.emacs.d/lisp/anki/"=
   (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions)))
 #+END_SRC
 
+* Usage
 #+BEGIN_SRC emacs-lisp
 M-x anki-browser
 #+END_SRC
 
-~RET~ to preview card, ~r~ play audio.
+~RET~ to preview card, ~r~ play audio, ~l~ to list deck,  ~q~ to quit.
