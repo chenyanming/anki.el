@@ -40,8 +40,16 @@ LIMIT 10000"
   :group 'anki
   :type 'string)
 
-(defvar anki-db-dir "/Users/damonchan/Desktop/collection.anki2")
-(defvar anki-media-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac/collection.media/")
+(defcustom anki-db-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac/collection.anki2"
+  "SQL separator, used in parsing SQL result into list."
+  :group 'anki
+  :type 'string)
+
+(defcustom anki-media-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac/collection.media/"
+  "SQL separator, used in parsing SQL result into list."
+  :group 'anki
+  :type 'string)
+
 (defun anki-query (sql-query)
   "Query calibre databse and return the result.
 Argument SQL-QUERY is the sqlite sql query string."
@@ -216,15 +224,6 @@ Argument QUERY-RESULT is the query result generate by sqlite."
              )
         ;; (format "%s  %s" deck-name (replace-regexp-in-string "\037" "   " flds))
         (format "%s  %s" deck-name sfld))))
-
-(defun anki-format-card-hash-table (card)
-  "Format one card ITEM."
-  (if (hash-table-p card)
-      (let* ((flds (gethash 'flds card))
-             ;; (sfld (gethash 'sfld card))
-             (did (gethash 'did card))
-             (deck-name (gethash "name" did)))
-        (format "%s  %s" deck-name (replace-regexp-in-string "\037" "   " flds)))))
 
 (defun anki-decode-did (input decks)
   (if input
