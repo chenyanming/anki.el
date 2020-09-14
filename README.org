@@ -22,7 +22,7 @@ Current status:
 - Play audio
  
 * Configuration
-Clone to ~"~/.emacs.d/lisp/anki/"~
+Clone to ~"=/.emacs.d/lisp/anki/"=
 
 #+BEGIN_SRC emacs-lisp
 (use-package anki
@@ -37,3 +37,5 @@ Clone to ~"~/.emacs.d/lisp/anki/"~
 #+BEGIN_SRC emacs-lisp
 M-x anki-browser
 #+END_SRC
+
+~RET~ to preview card, ~r~ play audio.
