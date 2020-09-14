@@ -26,6 +26,7 @@ Clone to ~"~/.emacs.d/lisp/anki/"~
 (use-package anki
   :load-path "~/.emacs.d/lisp/anki/"
   :config
+  (setq sql-sqlite-program "/usr/bin/sqlite3")
   (setq anki-collection-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac")
   (setq anki-audio-player (or (executable-find "aplay") (executable-find "afplay")))
   (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions)))
