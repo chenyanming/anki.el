@@ -9,16 +9,27 @@ time."
   :group 'anki
   :type 'boolean)
 
+(defcustom anki-audio-player (or (executable-find "aplay")
+                                         (executable-find "afplay"))
+  "Music player used to play sounds."
+  :group 'anki
+  :type 'string)
+
 (defvar anki-card-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "q" #'anki-card-quit)
-    (define-key map "q" #'anki-replay-audio)
+    (define-key map "r" #'anki-replay-audio)
     map)
-  "Keymap for `anki-show-mode'.")
+  "Keymap for `anki-card-mode'.")
 
-(define-derived-mode anki-show-mode fundamental-mode "anki-show"
+(defvar anki-shr-map
+  (let ((map (copy-keymap anki-card-mode-map)))
+    (set-keymap-parent map shr-map)
+    map))
+
+(define-derived-mode anki-card-mode fundamental-mode "anki-card"
   "Mode for displaying book entry details.
-\\{anki-show-mode-map}"
+\\{anki-card-mode-map}"
   (setq buffer-read-only t)
   (buffer-disable-undo))
 
@@ -30,9 +41,9 @@ The result depends on the value of `anki-show-unique-buffers'."
               (gethash 'id entry))
     "*anki-card*"))
 
-(define-derived-mode anki-show-mode fundamental-mode "anki-show"
+(define-derived-mode anki-card-mode fundamental-mode "anki-card"
   "Mode for displaying book entry details.
-\\{anki-show-mode-map}"
+\\{anki-card-mode-map}"
   (setq buffer-read-only t)
   (buffer-disable-undo))
 
@@ -47,7 +58,7 @@ The result depends on the value of `anki-show-unique-buffers'."
 (defun anki-show-card (entry &optional switch)
   "Display ENTRY in the current buffer.
 Optional argument SWITCH to switch to *anki-search* buffer to other window."
-  (unless (eq major-mode 'anki-show-mode)
+  (unless (eq major-mode 'anki-card-mode)
     (when (get-buffer (anki-show--buffer-name entry))
       (kill-buffer (anki-show--buffer-name entry))))
   (let* ((buff (get-buffer-create (anki-show--buffer-name entry)))
@@ -89,12 +100,12 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
 
         (insert "\n")
         ;; (setq end (point))
-        (anki-show-mode)
+        (anki-card-mode)
         ;; (shr-render-region (point-min) (point-max))
         (anki-render-html)
         (setq anki-show-card entry)
         (goto-char (point-min))))
-    (unless (eq major-mode 'anki-show-mode)
+    (unless (eq major-mode 'anki-card-mode)
       (funcall anki-show-card-switch buff)
       (when switch
         (switch-to-buffer-other-window (set-buffer (anki-search--buffer-name)))
@@ -158,7 +169,7 @@ This function honors `shr-max-image-proportion' if possible."
   "Render HTML in current buffer with shr."
   (run-hooks 'anki-pre-html-render-hook)
   (let (;; HACK: make buttons use our own commands
-        ;; (shr-map anki-mode-map)
+        (shr-map anki-shr-map)
         (shr-external-rendering-functions anki-shr-rendering-functions)
         (shr-use-fonts anki-variable-pitch))
     ;; HACK: `shr-external-rendering-functions' doesn't cover
@@ -200,7 +211,7 @@ that this variable only has an effect in Emacs 25.1 or greater."
 (defun anki-card-quit ()
   "Quit the *anki-card*."
   (interactive)
-  (when (eq major-mode 'anki-show-mode)
+  (when (eq major-mode 'anki-card-mode)
     (if (get-buffer "*anki-card*")
         (kill-buffer "*anki-card*"))))
 
@@ -211,5 +222,56 @@ that this variable only has an effect in Emacs 25.1 or greater."
 (defun anki-models-names (model)
   (cl-loop for name in (gethash "flds" model) collect
            (gethash "name" name)))
+
+(defun anki-replay-audio (&optional external)
+  "Open a visible link in an `eww-mode' buffer.
+If EXTERNAL is single prefix, browse the URL using
+`browse-url-secondary-browser-function'.
+If EXTERNAL is double prefix, browse in new buffer."
+  (interactive "P")
+  (if (process-live-p (get-process "anki-audio-player"))
+      (kill-process (get-process "anki-audio-player")))
+   (let ((sound (nth 1 (car (anki-shr-audio-collect)))))
+     (message (mapconcat 'identity
+                         `(,anki-audio-player
+                           ,@(delq nil (list (shell-quote-argument (expand-file-name sound)))))
+                         " ") )
+     (if (and anki-audio-player sound)
+         (start-process-shell-command
+          "anki-audio-player" nil
+          (mapconcat 'identity
+                     `(,anki-audio-player
+                       ,@(delq nil (list (shell-quote-argument (expand-file-name sound)))))
+                     " ")))) )
+
+(defun anki-shr-audio-collect ()
+  "Collect the positions of visible links in the current `anki-card' buffer."
+  (save-excursion
+    (let (beg end buf string url collected-list)
+      (setq buf (current-buffer))
+      (setq end
+            (if (get-text-property (point) 'shr-url)
+                (point)
+              (text-property-any
+               (point) (point-max) 'shr-url nil)))
+      (while (setq beg (text-property-not-all
+                        end (point-max) 'shr-url nil))
+        (goto-char beg)
+        (setq url (get-text-property beg 'shr-url))
+        (setq beg (point))
+        ;; Extract the current point text properties if it matched by giving
+        ;; property `face', and insert it to `buf-name'
+        (if (get-text-property (point) 'shr-url)
+            (progn
+              (setq end (next-single-property-change (point) 'shr-url nil (point-max)))
+              ;; When link at the end of buffer, end will be set to nil.
+              (if (not end)
+                  (setq end (point-max)))
+
+              (setq string (buffer-substring-no-properties beg end)) ; save the url title
+              ;; only collect media files
+              (if (string-match-p "\\.\\(mp3\\|wav\\|m4a\\|mp4\\)$" url)
+                  (push (list string url beg end) collected-list)))))
+      collected-list)))
 
 (provide 'anki-card)
