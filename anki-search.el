@@ -10,6 +10,19 @@
 (defvar anki-search-header-function #'anki-search-header
   "Function that returns the string to be used for the Calibredb search header.")
 
+(defvar anki-search-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [mouse-3] #'anki-search-mouse)
+    (define-key map (kbd "<RET>") #'anki-preview-card)
+    (define-key map "j" #'anki-next-card)
+    (define-key map "k" #'anki-previous-card)
+    (define-key map "g" #'anki-list-decks)
+    (define-key map "L" #'anki-next-deck)
+    (define-key map "L" #'anki-previous-deck)
+    (define-key map "q" #'anki-search-quit)
+    map)
+  "Keymap for `anki-search-mode'.")
+
 (defun anki-search-header ()
   "TODO: Return the string to be used as the Calibredb header.
 Indicating the library you use."

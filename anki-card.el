@@ -9,6 +9,13 @@ time."
   :group 'anki
   :type 'boolean)
 
+(defvar anki-card-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "q" #'anki-card-quit)
+    (define-key map "q" #'anki-replay-audio)
+    map)
+  "Keymap for `anki-show-mode'.")
+
 (define-derived-mode anki-show-mode fundamental-mode "anki-show"
   "Mode for displaying book entry details.
 \\{anki-show-mode-map}"
