@@ -207,13 +207,15 @@ Argument QUERY-RESULT is the query result generate by sqlite."
 (defun anki-format-card-hash-table (card)
   "Format one card ITEM."
   (if (hash-table-p card)
-      (let* ((flds (gethash 'flds card))
+      (let* ((sfld (gethash 'sfld card))
+             (flds (gethash 'flds card))
              (did (gethash 'did card))
              (deck-name (gethash "name" did))
              (mid (gethash 'mid card))
              (model-flds (gethash "flds" mid))
              )
-        (format "%s  %s" deck-name (replace-regexp-in-string "\037" "   " flds)))))
+        ;; (format "%s  %s" deck-name (replace-regexp-in-string "\037" "   " flds))
+        (format "%s  %s" deck-name sfld))))
 
 (defun anki-format-card-hash-table (card)
   "Format one card ITEM."
