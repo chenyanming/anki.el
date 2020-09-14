@@ -1,0 +1,36 @@
+#+TITLE:   Anki.el
+#+DATE:    September 14, 2020
+#+SINCE:   <replace with next tagged release version>
+#+STARTUP: inlineimages nofold
+
+* Table of Contents :TOC_3:noexport:
+- [[#description][Description]]
+- [[#features][Features]]
+- [[#configuration][Configuration]]
+
+* Description
+Yet another Anki Emacs Client.
+
+* Features
+Current status:
+
+- Anki Cards Browser
+- List and switch deck
+- Preview Card
+- Play audio
+ 
+* Configuration
+Clone to ~"~/.emacs.d/lisp/anki/"~
+
+#+BEGIN_SRC emacs-lisp
+(use-package anki
+  :load-path "~/.emacs.d/lisp/anki/"
+  :config
+  (setq anki-collection-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac")
+  (setq anki-audio-player (or (executable-find "aplay") (executable-find "afplay")))
+  (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions)))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+M-x anki-browser
+#+END_SRC

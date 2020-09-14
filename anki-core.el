@@ -40,7 +40,7 @@ ON cards.nid = notes.id
   :group 'anki
   :type 'string)
 
-(defcustom anki-collection-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac"
+(defcustom anki-collection-dir "~/Library/Application Support/Anki2/Default"
   "SQL separator, used in parsing SQL result into list."
   :group 'anki
   :type 'string)
