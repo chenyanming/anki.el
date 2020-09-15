@@ -38,10 +38,14 @@
     (define-key map "j" #'anki-next-card)
     (define-key map "k" #'anki-previous-card)
     (define-key map "g" #'anki-list-decks)
-    (define-key map "L" #'anki-next-deck)
-    (define-key map "L" #'anki-previous-deck)
+    ;; (define-key map "n" #'anki-next-deck)
+    ;; (define-key map "p" #'anki-previous-deck)
     (define-key map "r" #'anki-search-refresh)
     (define-key map "q" #'anki-search-quit)
+    (define-key map "j" #'anki-next-card)
+    (define-key map "k" #'anki-previous-card)
+    (define-key map "\M-j" #'anki-preview-next-card)
+    (define-key map "\M-k" #'anki-preview-previous-card)
     map)
   "Keymap for `anki-search-mode'.")
 
@@ -84,6 +88,20 @@ Indicating the library you use."
 (defun anki-search-buffer ()
   "Create buffer anki-search."
   (get-buffer-create "*anki-search*"))
+
+(defcustom anki-search-unique-buffers nil
+  "TODO: When non-nil, every entry buffer gets a unique name.
+This allows for displaying multiple serch buffers at the same
+time."
+  :group 'anki
+  :type 'boolean)
+
+(defun anki-search--buffer-name ()
+  "Return the appropriate buffer name for ENTRY.
+The result depends on the value of `anki-search-unique-buffers'."
+  (if anki-search-unique-buffers
+      (format "*anki-search-<%s>*" anki-collection-dir)
+    "*anki-search*"))
 
 (defcustom anki-search-filter ""
   "Query string filtering shown entries."
@@ -193,5 +211,36 @@ When live editing the filter, it is bound to :live.")
   (setq anki-search-entries (anki-format-cards))
   (setq anki-full-entries anki-search-entries)
   (anki-browser))
+
+(defun anki-next-card ()
+  "Move to next card."
+  (interactive)
+  (let ((ori "") (new ""))
+    (while (and (equal new ori) new ori)
+      (setq ori (gethash 'id (anki-find-card-at-point)))
+      (forward-line 1)
+      (setq new (gethash 'id (anki-find-card-at-point))))))
+
+(defun anki-previous-card ()
+  (interactive)
+  (let ((ori "") (new ""))
+    (while (and (equal new ori) new ori (> (line-number-at-pos) 1))
+      (forward-line -1)
+      (save-excursion
+        (setq ori (gethash 'id (anki-find-card-at-point)))
+        (forward-line -1)
+        (setq new (gethash 'id (anki-find-card-at-point)))))))
+
+(defun anki-preview-next-card ()
+  "Preview next card."
+  (interactive)
+  (anki-next-card)
+  (anki-show-card (anki-find-card-at-point) :switch))
+
+(defun anki-preview-previous-card ()
+  "Preview previous card."
+  (interactive)
+  (anki-previous-card)
+  (anki-show-card (anki-find-card-at-point) :switch))
 
 (provide 'anki-search)

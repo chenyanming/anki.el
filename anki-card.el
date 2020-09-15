@@ -238,7 +238,7 @@ that this variable only has an effect in Emacs 25.1 or greater."
 
 (defun anki-preview-card ()
   (interactive)
-  (anki-show-card (anki-find-card-at-point) ))
+  (anki-show-card (anki-find-card-at-point)))
 
 (defun anki-models-names (model)
   (cl-loop for name in (gethash "flds" model) collect

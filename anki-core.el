@@ -77,6 +77,7 @@ Argument SQL-QUERY is the sqlite sql query string."
         (temp (concat (file-name-as-directory temporary-file-directory) "collection.anki2")))
     (if (file-exists-p file)
         (progn
+          ;; TODO Copy to temp file to avoid database collision, but not ideal solution.
           (copy-file file temp t)
           (let ((cmd (format "%s -separator %s -newline %s -list -nullvalue \"\" -noheader %s \"%s\""
                              sql-sqlite-program
