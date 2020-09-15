@@ -57,4 +57,4 @@ git clone git@github.com:chenyanming/anki.el.git ~/.emacs.d/lisp/anki/
 M-x anki-browser
 #+END_SRC
 
-~RET~ to preview card, ~r~ play audio, ~l~ to list deck,  ~q~ to quit.
+~RET~ to preview card, ~r~ play audio, ~g~ to switch deck,  ~q~ to quit.

@@ -24,17 +24,22 @@
 (require 'anki-core)
 
 (defun anki-decode-milliseconds (input)
+  ;; TODO: Decrease the decoding time.
   (if input
-      (format-time-string "<%Y-%m-%d %a %H:%M:%S>"
+      (format-time-string "%Y-%m-%d %a %H:%M:%S"
                           (seconds-to-time
                            (/ (string-to-number input) 1000))) ))
 
 (defun anki-decode-seconds (input)
+  ;; TODO: Decrease the decoding time.
   (if input
-      (format-time-string "<%Y-%m-%d %a %H:%M:%S>"
+      (format-time-string "%Y-%m-%d %a %H:%M:%S"
                           (seconds-to-time (string-to-number input))) ))
 
 
+(defun anki-decode-days (input)
+  ;; TODO
+  )
 
 
 (defun anki-find-card-at-point ()

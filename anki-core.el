@@ -239,13 +239,28 @@ Argument QUERY-RESULT is the query result generate by sqlite."
   (if (hash-table-p card)
       (let* ((sfld (gethash 'sfld card))
              (flds (gethash 'flds card))
+             (due (anki-decode-due card))
              (did (gethash 'did card))
              (deck-name (gethash "name" did))
              (mid (gethash 'mid card))
              (model-name (gethash "name" mid))
              (model-flds (gethash "flds" mid)))
         ;; (format "%s  %s" deck-name (replace-regexp-in-string "\037" "   " flds))
-        (format "%s  %s  %s" deck-name model-name sfld))))
+        (format "%s  %s  %s  %s" deck-name model-name due sfld))))
+
+
+(defun anki-decode-due (card)
+  (let ((type (gethash 'type card))
+        (due (gethash 'due card)))
+    (cond ((equal type "0")             ; new
+           (concat "New #" due))
+          ((equal type "1")             ; learning
+           (anki-decode-seconds due))
+          ((equal type "2")             ; review
+           (concat "Review #" due))
+          ((equal type "3")             ; relearning
+           (concat "Relearning: " due ))
+          (t ""))))
 
 (defun anki-decode-did (input decks)
   (if input
