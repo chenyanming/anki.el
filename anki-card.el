@@ -252,47 +252,49 @@ If EXTERNAL is double prefix, browse in new buffer."
   (interactive "P")
   (if (process-live-p (get-process "anki-audio-player"))
       (kill-process (get-process "anki-audio-player")))
-   (let ((sound (nth 1 (car (anki-shr-audio-collect)))))
-     (message (mapconcat 'identity
-                         `(,anki-audio-player
-                           ,@(delq nil (list (shell-quote-argument (expand-file-name sound)))))
-                         " ") )
-     (if (and anki-audio-player sound)
-         (start-process-shell-command
-          "anki-audio-player" nil
-          (mapconcat 'identity
-                     `(,anki-audio-player
-                       ,@(delq nil (list (shell-quote-argument (expand-file-name sound)))))
-                     " ")))) )
+  (if (equal major-mode 'anki-search-mode)
+    (anki-preview-card))
+  (let ((sound (nth 1 (car (anki-shr-audio-collect)))))
+    (message (mapconcat 'identity
+                        `(,anki-audio-player
+                          ,@(delq nil (list (shell-quote-argument (expand-file-name sound)))))
+                        " ") )
+    (if (and anki-audio-player sound)
+        (start-process-shell-command
+         "anki-audio-player" nil
+         (mapconcat 'identity
+                    `(,anki-audio-player
+                      ,@(delq nil (list (shell-quote-argument (expand-file-name sound)))))
+                    " ")))))
 
 (defun anki-shr-audio-collect ()
   "Collect the positions of visible links in the current `anki-card' buffer."
   (save-excursion
-    (let (beg end buf string url collected-list)
-      (setq buf (current-buffer))
-      (setq end
-            (if (get-text-property (point) 'shr-url)
-                (point)
-              (text-property-any
-               (point) (point-max) 'shr-url nil)))
-      (while (setq beg (text-property-not-all
-                        end (point-max) 'shr-url nil))
-        (goto-char beg)
-        (setq url (get-text-property beg 'shr-url))
-        (setq beg (point))
-        ;; Extract the current point text properties if it matched by giving
-        ;; property `face', and insert it to `buf-name'
-        (if (get-text-property (point) 'shr-url)
-            (progn
-              (setq end (next-single-property-change (point) 'shr-url nil (point-max)))
-              ;; When link at the end of buffer, end will be set to nil.
-              (if (not end)
-                  (setq end (point-max)))
+    (with-current-buffer (get-buffer "*anki-card*")
+      (let (beg end string url collected-list)
+        (setq end
+              (if (get-text-property (point) 'shr-url)
+                  (point)
+                (text-property-any
+                 (point) (point-max) 'shr-url nil)))
+        (while (setq beg (text-property-not-all
+                          end (point-max) 'shr-url nil))
+          (goto-char beg)
+          (setq url (get-text-property beg 'shr-url))
+          (setq beg (point))
+          ;; Extract the current point text properties if it matched by giving
+          ;; property `face', and insert it to `buf-name'
+          (if (get-text-property (point) 'shr-url)
+              (progn
+                (setq end (next-single-property-change (point) 'shr-url nil (point-max)))
+                ;; When link at the end of buffer, end will be set to nil.
+                (if (not end)
+                    (setq end (point-max)))
 
-              (setq string (buffer-substring-no-properties beg end)) ; save the url title
-              ;; only collect media files
-              (if (string-match-p "\\.\\(mp3\\|wav\\|m4a\\|mp4\\)$" url)
-                  (push (list string url beg end) collected-list)))))
-      collected-list)))
+                (setq string (buffer-substring-no-properties beg end)) ; save the url title
+                ;; only collect media files
+                (if (string-match-p "\\.\\(mp3\\|wav\\|m4a\\|mp4\\)$" url)
+                    (push (list string url beg end) collected-list)))))
+        collected-list))))
 
 (provide 'anki-card)
