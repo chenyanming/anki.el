@@ -37,7 +37,7 @@
     (define-key map (kbd "<RET>") #'anki-preview-card)
     (define-key map "j" #'anki-next-card)
     (define-key map "k" #'anki-previous-card)
-    (define-key map "g" #'anki-list-decks)
+    (define-key map "l" #'anki-list-decks)
     ;; (define-key map "n" #'anki-next-deck)
     ;; (define-key map "p" #'anki-previous-deck)
     (define-key map "r" #'anki-search-refresh)
