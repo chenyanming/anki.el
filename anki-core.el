@@ -23,6 +23,7 @@
 
 (require 'shr)
 (require 'json)
+(require 'cl-lib)
 
 (eval-when-compile (defvar sql-sqlite-program))
 
