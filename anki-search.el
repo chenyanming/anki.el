@@ -40,6 +40,7 @@
     (define-key map "g" #'anki-list-decks)
     (define-key map "L" #'anki-next-deck)
     (define-key map "L" #'anki-previous-deck)
+    (define-key map "r" #'anki-search-refresh)
     (define-key map "q" #'anki-search-quit)
     map)
   "Keymap for `anki-search-mode'.")
@@ -186,5 +187,11 @@ When live editing the filter, it is bound to :live.")
           ((get-buffer "*anki-search*")
            (kill-buffer "*anki-search*")))))
 
+(defun anki-search-refresh ()
+  "Refresh anki."
+  (interactive)
+  (setq anki-search-entries (anki-format-cards))
+  (setq anki-full-entries anki-search-entries)
+  (anki-browser))
 
 (provide 'anki-search)

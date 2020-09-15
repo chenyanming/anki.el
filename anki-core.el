@@ -73,18 +73,18 @@ ON cards.nid = notes.id
   "Query calibre databse and return the result.
 Argument SQL-QUERY is the sqlite sql query string."
   (interactive)
-  (if (file-exists-p (concat (file-name-as-directory anki-collection-dir) "collection.anki2"))
-      (let ((cmd (format "%s -separator %s -newline %s -list -nullvalue \"\" -noheader %s \"%s\""
-                         sql-sqlite-program
-                         anki-sql-separator
-                         anki-sql-newline
-                         (shell-quote-argument (expand-file-name (concat (file-name-as-directory anki-collection-dir) "collection.anki2")))
-                         sql-query)))
-        (shell-command-to-string cmd)) nil))
-
-
-;; (pp-eval-expression
-;;  '(anki-parse-decks))
+  (let ((file (concat (file-name-as-directory anki-collection-dir) "collection.anki2"))
+        (temp (concat (file-name-as-directory temporary-file-directory) "collection.anki2")))
+    (if (file-exists-p file)
+        (progn
+          (copy-file file temp t)
+          (let ((cmd (format "%s -separator %s -newline %s -list -nullvalue \"\" -noheader %s \"%s\""
+                             sql-sqlite-program
+                             anki-sql-separator
+                             anki-sql-newline
+                             (shell-quote-argument (expand-file-name temp))
+                             sql-query)))
+            (shell-command-to-string cmd))) nil)))
 
 (defun anki-parse-decks ()
   (let ((decks (let* ((json-array-type 'list) ;;;;;;;;; 'vector is the default
