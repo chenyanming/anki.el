@@ -28,6 +28,24 @@
   "Face for the header at point."
   :group 'anki-faces)
 
+(defcustom anki-search-unique-buffers nil
+  "TODO: When non-nil, every entry buffer gets a unique name.
+This allows for displaying multiple serch buffers at the same
+time."
+  :group 'anki
+  :type 'boolean)
+
+(defcustom anki-search-filter ""
+  "Query string filtering shown entries."
+  :group 'anki
+  :type 'string)
+
+(defvar anki-search-entries nil
+  "List of the entries currently on display.")
+
+(defvar anki-full-entries nil
+  "List of the all entries currently on library.")
+
 (defvar anki-search-header-function #'anki-search-header
   "Function that returns the string to be used for the Calibredb search header.")
 
@@ -50,6 +68,21 @@
     map)
   "Keymap for `anki-search-mode'.")
 
+(defvar anki-search-filter-active nil
+  "When non-nil, anki is currently reading a filter from the minibuffer.
+When live editing the filter, it is bound to :live.")
+
+(define-derived-mode anki-search-mode fundamental-mode "anki-search"
+  "Major mode for listing calibre entries.
+\\{anki-search-mode-map}"
+  (setq truncate-lines t
+        buffer-read-only t
+        header-line-format '(:eval (funcall anki-search-header-function)))
+  (buffer-disable-undo)
+  (set (make-local-variable 'hl-line-face) 'anki-search-header-highlight-face)
+  (hl-line-mode)
+  (add-hook 'minibuffer-setup-hook 'anki-search--minibuffer-setup))
+
 (defun anki-search-header ()
   "TODO: Return the string to be used as the Calibredb header.
 Indicating the library you use."
@@ -69,6 +102,7 @@ Indicating the library you use."
   ;;                        (if (> len 0)
   ;;                            (concat "Marked: " (number-to-string len)) "")) 'face font-lock-negation-char-face)))
   )
+
 (defun anki-search--minibuffer-setup ()
   "Set up the minibuffer for live filtering."
   (when anki-search-filter-active
@@ -90,24 +124,12 @@ Indicating the library you use."
   "Create buffer anki-search."
   (get-buffer-create "*anki-search*"))
 
-(defcustom anki-search-unique-buffers nil
-  "TODO: When non-nil, every entry buffer gets a unique name.
-This allows for displaying multiple serch buffers at the same
-time."
-  :group 'anki
-  :type 'boolean)
-
 (defun anki-search--buffer-name ()
   "Return the appropriate buffer name for ENTRY.
 The result depends on the value of `anki-search-unique-buffers'."
   (if anki-search-unique-buffers
       (format "*anki-search-<%s>*" anki-collection-dir)
     "*anki-search*"))
-
-(defcustom anki-search-filter ""
-  "Query string filtering shown entries."
-  :group 'anki
-  :type 'string)
 
 (defun anki-search-update (&optional force)
   "Update the anki-search buffer listing to match the database.
@@ -129,27 +151,6 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
         ;; (insert "End of entries.\n")
         (goto-char (point-min))         ; back to point-min after filtering
         (setf anki-search-last-update (float-time))))))
-
-(defvar anki-search-filter-active nil
-  "When non-nil, anki is currently reading a filter from the minibuffer.
-When live editing the filter, it is bound to :live.")
-
-(define-derived-mode anki-search-mode fundamental-mode "anki-search"
-  "Major mode for listing calibre entries.
-\\{anki-search-mode-map}"
-  (setq truncate-lines t
-        buffer-read-only t
-        header-line-format '(:eval (funcall anki-search-header-function)))
-  (buffer-disable-undo)
-  (set (make-local-variable 'hl-line-face) 'anki-search-header-highlight-face)
-  (hl-line-mode)
-  (add-hook 'minibuffer-setup-hook 'anki-search--minibuffer-setup))
-
-(defvar anki-search-entries nil
-  "List of the entries currently on display.")
-
-(defvar anki-full-entries nil
-  "List of the all entries currently on library.")
 
 (defun anki-browser ()
   "Enter calibre Search Buffer."
