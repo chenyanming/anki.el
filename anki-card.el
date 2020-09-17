@@ -171,7 +171,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
         (setq end (point))
         (put-text-property beg end 'anki-card entry)
 
-        (dolist (field (mapcar* 'cons model-names (split-string flds "\037")))
+        (dolist (field (cl-mapcar 'cons model-names (split-string flds "\037")))
           (let* ((mf (car field))
                  (cf (cdr field)))
             (insert (format "<div><h1>%s</h1><p>%s</p></div>" mf cf))))
