@@ -23,6 +23,32 @@
 
 (require 'anki-core)
 
+(defcustom anki-variable-pitch t
+  "Non-nil if a variable pitch face should be used.
+Otherwise the default face is used."
+  :type 'boolean
+  :group 'anki)
+
+(defcustom anki-text-width nil
+  "Width filled text shall occupy.
+An integer is interpreted as the number of columns.  If nil, use
+the full window's width.  If t, disable filling completely.  Note
+that this variable only has an effect in Emacs 25.1 or greater."
+  :type '(choice (integer :tag "Fixed width in characters")
+                 (const   :tag "Use the width of the window" nil)
+                 (const   :tag "Disable filling" t))
+  :group 'anki)
+
+(defcustom anki-pre-html-render-hook nil
+  "Hook run before `anki-render-html'."
+  :type 'hook
+  :group 'anki)
+
+(defcustom anki-post-html-render-hook nil
+  "Hook run after `anki-render-html'."
+  :type 'hook
+  :group 'anki)
+
 (defcustom anki-show-unique-buffers nil
   "TODO: When non-nil, every entry buffer gets a unique name.
 This allows for displaying multiple show buffers at the same
@@ -63,6 +89,13 @@ Pandoc >= 1.16 deprecates `--no-wrap' in favor of
 Used to clean output from Pandoc."
   :type '(alist :key-type string
                 :value-type string))
+
+(defvar anki-shr-rendering-functions
+  '(;; default function uses url-retrieve and fails on local images
+    (img . anki-render-img)
+    ;; titles are rendered *inside* the document by default
+    )
+  "Alist of rendering functions used with `shr-render-region'.")
 
 (defvar anki-card-mode-map
   (let ((map (make-sparse-keymap)))
@@ -306,13 +339,6 @@ This function honors `shr-max-image-proportion' if possible."
   (when string
     (url-unhex-string string)))
 
-(defvar anki-shr-rendering-functions
-  '(;; default function uses url-retrieve and fails on local images
-    (img . anki-render-img)
-    ;; titles are rendered *inside* the document by default
-    )
-  "Alist of rendering functions used with `shr-render-region'.")
-
 (defun anki-render-html ()
   "Render HTML in current buffer with shr."
   (run-hooks 'anki-pre-html-render-hook)
@@ -330,31 +356,6 @@ This function honors `shr-max-image-proportion' if possible."
           (shr-render-region (point-min) (point-max))))))
   (run-hooks 'anki-post-html-render-hook))
 
-(defcustom anki-variable-pitch t
-  "Non-nil if a variable pitch face should be used.
-Otherwise the default face is used."
-  :type 'boolean
-  :group 'anki)
-
-(defcustom anki-text-width nil
-  "Width filled text shall occupy.
-An integer is interpreted as the number of columns.  If nil, use
-the full window's width.  If t, disable filling completely.  Note
-that this variable only has an effect in Emacs 25.1 or greater."
-  :type '(choice (integer :tag "Fixed width in characters")
-                 (const   :tag "Use the width of the window" nil)
-                 (const   :tag "Disable filling" t))
-  :group 'anki)
-
-(defcustom anki-pre-html-render-hook nil
-  "Hook run before `anki-render-html'."
-  :type 'hook
-  :group 'anki)
-
-(defcustom anki-post-html-render-hook nil
-  "Hook run after `anki-render-html'."
-  :type 'hook
-  :group 'anki)
 
 (defun anki-card-quit ()
   "Quit the *anki-card*."
