@@ -30,11 +30,39 @@ time."
   :group 'anki
   :type 'boolean)
 
+(defcustom anki-card-mode-parent-mode 'fundamental-mode
+  "The Parent mode of Anki card Mode.
+Support: `org-mode', `fundamental-mode', `shrface-mode'."
+  :group 'anki
+  :type 'symbol)
+
 (defcustom anki-audio-player (or (executable-find "aplay")
                                          (executable-find "afplay"))
   "Music player used to play sounds."
   :group 'anki
   :type 'string)
+
+
+(defcustom anki-pandoc-sleep-time 0.2
+  "When testing Pandoc the first time it's used in a session, wait this long for Pandoc to start.
+Normally this should not need to be changed, but if Pandoc takes
+unusually long to start on your system (which it seems to on
+FreeBSD, for some reason), you may need to increase this."
+  :type 'float)
+
+(defconst anki--pandoc-no-wrap-option nil
+  "Option to pass to Pandoc to disable wrapping.
+Pandoc >= 1.16 deprecates `--no-wrap' in favor of
+`--wrap=none'.")
+
+(defcustom anki-pandoc-replacements
+  (list (cons (rx "") "")
+        (cons (rx "%20") " ")
+        (cons "^\n$" ""))
+  "List of alists pairing regular expressions with a string that should replace each one.
+Used to clean output from Pandoc."
+  :type '(alist :key-type string
+                :value-type string))
 
 (defvar anki-card-mode-map
   (let ((map (make-sparse-keymap)))
@@ -52,7 +80,16 @@ time."
   "Mode for displaying book entry details.
 \\{anki-card-mode-map}"
   (setq buffer-read-only t)
-  (buffer-disable-undo))
+  ;; (buffer-disable-undo)
+  (cond ((eq anki-card-mode-parent-mode 'org-mode)
+         (org-mode))
+        ((eq anki-card-mode-parent-mode 'shrface-mode)
+         (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
+         (shrface-mode))
+        ((eq anki-card-mode-parent-mode 'fundamental-mode)
+         (fundamental-mode))
+        (t
+         (fundamental-mode))))
 
 (defun anki-show--buffer-name (entry)
   "Return the appropriate buffer name for ENTRY.
@@ -90,7 +127,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
          (original (point))
          (file-map (make-sparse-keymap))
          beg end)
-    (let ((inhibit-read-only t) c-beg c-end)
+    (let ((inhibit-read-only t))
       (with-current-buffer buff
         (define-key file-map [mouse-1] 'anki-file-mouse-1)
         (define-key file-map [mouse-3] 'anki-file-mouse-3)
@@ -101,14 +138,10 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
         (setq end (point))
         (put-text-property beg end 'anki-card entry)
 
-        (setq c-beg (point))
         (dolist (field (mapcar* 'cons model-names (split-string flds "\037")))
           (let* ((mf (car field))
-                 (cf (cdr field)) img-src)
-            (insert (format "<h1>%s</h1><br><br>" mf))
-            (insert (format "%s<br><br>" cf))
-            (insert "<br><br>")))
-        (setq c-end (point))
+                 (cf (cdr field)))
+            (insert (format "<div><h1>%s</h1><p>%s</p></div>" mf cf))))
 
         (goto-char (point-min))
         (while (re-search-forward "src=\"\\(.*?\\)\"" nil t)
@@ -121,16 +154,110 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
 
         (insert "\n")
         ;; (setq end (point))
-        (anki-card-mode)
         ;; (shr-render-region (point-min) (point-max))
-        (anki-render-html)
+
+        (if (eq anki-card-mode-parent-mode 'org-mode)
+            (anki-render-org)
+          (anki-render-html))
+
         (setq anki-show-card entry)
-        (goto-char (point-min))))
+        (goto-char (point-min))
+        (anki-card-mode)))
     (unless (eq major-mode 'anki-card-mode)
       (funcall anki-show-card-switch buff)
       (when switch
         (switch-to-buffer-other-window (set-buffer (anki-search--buffer-name)))
         (goto-char original)))))
+
+(defun anki-render-org ()
+  (unless (zerop (call-process-region (point-min) (point-max) "pandoc"
+                                      t t nil
+                                      (anki--pandoc-no-wrap-option)
+                                      "-f" "html-raw_html-native_divs" "-t" "org"))
+    ;; TODO: Add error output, see org-protocol-capture-html
+    (error "Pandoc failed"))
+  (anki--clean-pandoc-output))
+
+
+(defun anki--pandoc-no-wrap-option ()
+  "Return option `anki--pandoc-no-wrap-option', setting if unset."
+  (or anki--pandoc-no-wrap-option
+      (setq anki--pandoc-no-wrap-option (anki--check-pandoc-no-wrap-option))))
+
+(defun anki--check-pandoc-no-wrap-option ()
+  "Return appropriate no-wrap option string depending on Pandoc version."
+  ;; Pandoc >= 1.16 deprecates the --no-wrap option, replacing it with
+  ;; --wrap=none.  Sending the wrong option causes output to STDERR,
+  ;; which `call-process-region' doesn't like.  So we test Pandoc to see
+  ;; which option to use.
+  (with-temp-buffer
+    (let* ((limit 3)
+           (checked 0)
+           (process (start-process "test-pandoc" (current-buffer)
+                                   "pandoc" "--dump-args" "--no-wrap")))
+      (while (process-live-p process)
+        (if (= checked limit)
+            (progn
+              ;; Pandoc didn't exit in time.  Kill it and raise an
+              ;; error.  This function will return `nil' and
+              ;; `anki--pandoc-no-wrap-option' will remain
+              ;; `nil', which will cause this function to run again and
+              ;; set the const when a capture is run.
+              (set-process-query-on-exit-flag process nil)
+              (error "Unable to test Pandoc.  Try increasing `anki-pandoc-sleep-time'.  If it still doesn't work, please report this bug! (Include the output of \"pandoc --dump-args --no-wrap\")"))
+          (sleep-for anki-pandoc-sleep-time)
+          (cl-incf checked)))
+      (if (and (zerop (process-exit-status process))
+               (not (string-match "--no-wrap is deprecated" (buffer-string))))
+          "--no-wrap"
+        "--wrap=none"))))
+
+(defun anki--clean-pandoc-output ()
+  "Remove unwanted things in current buffer of Pandoc output."
+
+  (anki--remove-html-blocks)
+  (anki--remove-custom_id_properties)
+  (anki--remove-bad-characters))
+
+(defun anki--remove-bad-characters ()
+  "Remove unwanted characters from current buffer.
+Bad characters are matched by `anki-pandoc-replacements'."
+  (save-excursion
+    (cl-loop for (re . replacement) in anki-pandoc-replacements
+             do (progn
+                  (goto-char (point-min))
+                  (while (re-search-forward re nil t)
+                    (replace-match replacement))))))
+
+(defun anki--remove-html-blocks ()
+  "Remove \"#+BEGIN_HTML...#+END_HTML\" blocks from current buffer."
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward (rx (optional "\n")
+                                  "#+BEGIN_HTML"
+                                  (minimal-match (1+ anything))
+                                  "#+END_HTML"
+                                  (optional "\n"))
+                              nil t)
+      (replace-match ""))))
+
+(defun anki--remove-custom_id_properties ()
+  "Remove property drawers containing CUSTOM_ID properties.
+This is a blunt instrument: any drawer containing the CUSTOM_ID
+property is removed, regardless of other properties it may
+contain.  This seems to be the best course of action in current
+Pandoc output."
+  (let ((regexp (org-re-property "CUSTOM_ID" nil nil)))
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward regexp nil t)
+        (when (org-at-property-p)
+          (org-back-to-heading)
+          ;; As a minor optimization, we don't bound the search to the current entry.  Unless the
+          ;; current property drawer is malformed, which shouldn't happen in Pandoc output, it
+          ;; should work.
+          (re-search-forward org-property-drawer-re)
+          (setf (buffer-substring (match-beginning 0) (match-end 0)) ""))))))
 
 (defun anki-render-img (dom &optional url)
   "Custom <img> rendering function for DOM.
