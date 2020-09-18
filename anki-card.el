@@ -202,13 +202,14 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
          (id (gethash 'id entry))       ; card id
          (flds (gethash 'flds entry))   ; note fields
          (model (gethash 'mid entry)) ; model names
+         (css (gethash "css" model))
          (model-names (anki-models-names model))
          (ord (gethash 'ord entry))     ; template number
          (template (anki-decode-tmpls ord model))
          (original (point))
          (file-map (make-sparse-keymap))
          beg end)
-    (let ((inhibit-read-only t))
+    (let ((inhibit-read-only t) final)
       (with-current-buffer buff
         (anki-card-mode)
         (cond ((eq anki-card-mode-parent-mode 'org-mode)
@@ -222,32 +223,46 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
                (fundamental-mode)))
         (erase-buffer)
 
-        ;; insert the question template
-        (insert (nth 1 template))
+        (setq final
+              (with-temp-buffer
+                ;; insert the question template
+                (insert (nth 1 template))
 
-        ;; replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements
-        (dolist (field (cl-mapcar 'cons model-names (split-string flds "\037")))
-          (let* ((mf (car field))
-                 (cf (cdr field)))
-            (anki-field-replace-basic mf cf)))
+                ;; replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements
+                (dolist (field (cl-mapcar 'cons model-names (split-string flds "\037")))
+                  (let* ((mf (car field))
+                         (cf (cdr field)))
+                    (anki-field-replace-basic mf cf)))
 
-        (anki-field-replace-media)
+                (anki-field-replace-media)
+                (insert (format "<style>%s</style>" css))
+                (buffer-string)))
+
+        (cond ((eq switch :browser)
+               (insert final)
+               (browse-url-of-buffer))
+              (t
+               (insert final)
+               (setq anki-show-card entry)
+               (goto-char (point-min))))
 
         (if (eq anki-card-mode-parent-mode 'org-mode)
             (anki-render-org)
-          (anki-render-html))
-
-        (setq anki-show-card entry)
-        (goto-char (point-min))))
+          (anki-render-html))))
     (unless (eq major-mode 'anki-card-mode)
-      (funcall anki-show-card-switch buff)
-      (when switch
+      (when (eq switch :switch)
+        (funcall anki-show-card-switch buff)
         (switch-to-buffer-other-window (set-buffer (anki-search--buffer-name)))
         (goto-char original)))))
 
 (defun anki-preview-front ()
   (interactive)
   (anki-show-front (anki-find-card-at-point) :switch)
+  (anki-play-audio))
+
+(defun anki-preview-front-on-browser ()
+  (interactive)
+  (anki-show-front (anki-find-card-at-point) :browser)
   (anki-play-audio))
 
 (defun anki-show-back (entry &optional switch)
@@ -261,12 +276,13 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
          (flds (gethash 'flds entry))   ; note fields
          (model (gethash 'mid entry)) ; model names
          (model-names (anki-models-names model))
+         (css (gethash "css" model))
          (ord (gethash 'ord entry))     ; template number
          (template (anki-decode-tmpls ord model))
          (original (point))
          (file-map (make-sparse-keymap))
          beg end)
-    (let ((inhibit-read-only t) question answer)
+    (let ((inhibit-read-only t) final)
       (with-current-buffer buff
         (anki-card-mode)
         (cond ((eq anki-card-mode-parent-mode 'org-mode)
@@ -280,49 +296,59 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
                (fundamental-mode)))
         (erase-buffer)
 
-        (setq question
+        (setq final
               (with-temp-buffer
-                ;; insert the question template
-                (insert (nth 1 template))
+                (let* ((question
+                        (with-temp-buffer
+                          ;; insert the question template
+                          (insert (nth 1 template))
 
-                ;; replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements
-                (dolist (field (cl-mapcar 'cons model-names (split-string flds "\037")))
-                  (let* ((mf (car field))
-                         (cf (cdr field)))
-                    (anki-field-replace-basic mf cf)))
-                (buffer-string)))
+                          ;; replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements
+                          (dolist (field (cl-mapcar 'cons model-names (split-string flds "\037")))
+                            (let* ((mf (car field))
+                                   (cf (cdr field)))
+                              (anki-field-replace-basic mf cf)))
+                          (buffer-string)))
+                       (answer
+                        (with-temp-buffer
+                          ;; insert the answer template
+                          (insert (nth 2 template))
 
-        (setq answer
-              (with-temp-buffer
-                ;; insert the answer template
-                (insert (nth 2 template))
+                          ;; replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements
+                          (dolist (field (cl-mapcar 'cons model-names (split-string flds "\037")))
+                            (let* ((mf (car field))
+                                   (cf (cdr field)))
+                              (anki-field-replace-basic mf cf question)))
+                          (buffer-string))) )
+                  (insert answer)
+                  (anki-field-replace-media)
+                  (insert (format "<style>%s</style>" css))
+                  (buffer-string))))
 
-                ;; replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements
-                (dolist (field (cl-mapcar 'cons model-names (split-string flds "\037")))
-                  (let* ((mf (car field))
-                         (cf (cdr field)))
-                    (anki-field-replace-basic mf cf question)))
-                (buffer-string)))
-
-        (insert answer)
-
-        (anki-field-replace-media)
-
+        (cond ((eq switch :browser)
+               (insert final)
+               (browse-url-of-buffer))
+              (t
+               (insert final)
+               (setq anki-show-card entry)
+               (goto-char (point-min))))
         (if (eq anki-card-mode-parent-mode 'org-mode)
             (anki-render-org)
-          (anki-render-html))
-
-        (setq anki-show-card entry)
-        (goto-char (point-min))))
+          (anki-render-html))))
     (unless (eq major-mode 'anki-card-mode)
-      (funcall anki-show-card-switch buff)
-      (when switch
+      (when (eq switch :switch)
+        (funcall anki-show-card-switch buff)
         (switch-to-buffer-other-window (set-buffer (anki-search--buffer-name)))
         (goto-char original)))))
 
 (defun anki-preview-back ()
   (interactive)
   (anki-show-back (anki-find-card-at-point) :switch)
+  (anki-play-audio))
+
+(defun anki-preview-back-on-browser ()
+  (interactive)
+  (anki-show-back (anki-find-card-at-point) :browser)
   (anki-play-audio))
 
 (defun anki-field-replace-basic (mf cf &optional question)
@@ -564,6 +590,7 @@ This function honors `shr-max-image-proportion' if possible."
   "Collect the positions of visible links in the current `anki-card' buffer."
   (save-excursion
     (with-current-buffer (get-buffer "*anki-card*")
+      (goto-char (point-min))
       (let (beg end string url collected-list)
         (setq end
               (if (get-text-property (point) 'shr-url)

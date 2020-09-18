@@ -55,6 +55,8 @@ time."
     (define-key map (kbd "<RET>") #'anki-preview-card)
     (define-key map "f" #'anki-preview-front)
     (define-key map "b" #'anki-preview-back)
+    (define-key map "F" #'anki-preview-front-on-browser)
+    (define-key map "B" #'anki-preview-back-on-browser)
     (define-key map "j" #'anki-next-card)
     (define-key map "k" #'anki-previous-card)
     (define-key map "l" #'anki-list-decks)
