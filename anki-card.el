@@ -540,11 +540,17 @@ This function honors `shr-max-image-proportion' if possible."
   (interactive)
   (if (process-live-p (get-process "anki-audio-player"))
       (kill-process (get-process "anki-audio-player")))
-  (cond ((equal major-mode 'anki-search-mode)
-         (funcall 'anki-preview-card)
-         (anki-play-audio))
-        ((equal major-mode 'anki-card-mode)
-         (anki-play-audio))))
+  (cond
+   ;; if there is *anki-card* buffer
+   ((get-buffer "*anki-card*")
+    (anki-play-audio))
+   ;; if no *anki-card* buffer
+   ((equal major-mode 'anki-search-mode)
+    (funcall 'anki-preview-card)
+    (anki-play-audio))
+   ;; if in *anki-card* buffer
+   ((equal major-mode 'anki-card-mode)
+    (anki-play-audio))))
 
 (defun anki-play-audio ()
   "Collect and play the audio in current buffer"
