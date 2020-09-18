@@ -162,6 +162,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
          beg end)
     (let ((inhibit-read-only t))
       (with-current-buffer buff
+        (anki-card-mode)
         (define-key file-map [mouse-1] 'anki-file-mouse-1)
         (define-key file-map [mouse-3] 'anki-file-mouse-3)
         (erase-buffer)
@@ -194,8 +195,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
           (anki-render-html))
 
         (setq anki-show-card entry)
-        (goto-char (point-min))
-        (anki-card-mode)))
+        (goto-char (point-min))))
     (unless (eq major-mode 'anki-card-mode)
       (funcall anki-show-card-switch buff)
       (when switch
