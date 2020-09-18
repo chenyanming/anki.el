@@ -114,15 +114,7 @@ Used to clean output from Pandoc."
 \\{anki-card-mode-map}"
   (setq buffer-read-only t)
   ;; (buffer-disable-undo)
-  (cond ((eq anki-card-mode-parent-mode 'org-mode)
-         (org-mode))
-        ((eq anki-card-mode-parent-mode 'shrface-mode)
-         (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
-         (shrface-mode))
-        ((eq anki-card-mode-parent-mode 'fundamental-mode)
-         (fundamental-mode))
-        (t
-         (fundamental-mode))))
+  )
 
 (defun anki-show--buffer-name (entry)
   "Return the appropriate buffer name for ENTRY.
@@ -163,6 +155,15 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
     (let ((inhibit-read-only t))
       (with-current-buffer buff
         (anki-card-mode)
+        (cond ((eq anki-card-mode-parent-mode 'org-mode)
+               (org-mode))
+              ((eq anki-card-mode-parent-mode 'shrface-mode)
+               (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
+               (shrface-mode))
+              ((eq anki-card-mode-parent-mode 'fundamental-mode)
+               (fundamental-mode))
+              (t
+               (fundamental-mode)))
         (define-key file-map [mouse-1] 'anki-file-mouse-1)
         (define-key file-map [mouse-3] 'anki-file-mouse-3)
         (erase-buffer)
@@ -177,18 +178,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
                  (cf (cdr field)))
             (insert (format "<div><h1>%s</h1><p>%s</p></div>" mf cf))))
 
-        (goto-char (point-min))
-        (while (re-search-forward "src=\"\\(.*?\\)\"" nil t)
-          (replace-match (format "src=\"%s%s\"" (concat (file-name-as-directory anki-collection-dir) "collection.media/") (match-string 1))))
-
-        (goto-char (point-min))
-        (while (re-search-forward "\\[sound:\\(.*?\\)\\]" nil t)
-          (replace-match (format "<a href=\"%s%s\">Play</a>" (concat (file-name-as-directory anki-collection-dir) "collection.media/") (match-string 1))))
-
-
-        (insert "\n")
-        ;; (setq end (point))
-        ;; (shr-render-region (point-min) (point-max))
+        (anki-field-replace-media)
 
         (if (eq anki-card-mode-parent-mode 'org-mode)
             (anki-render-org)
@@ -221,14 +211,16 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
     (let ((inhibit-read-only t))
       (with-current-buffer buff
         (anki-card-mode)
-        (define-key file-map [mouse-1] 'anki-file-mouse-1)
-        (define-key file-map [mouse-3] 'anki-file-mouse-3)
+        (cond ((eq anki-card-mode-parent-mode 'org-mode)
+               (org-mode))
+              ((eq anki-card-mode-parent-mode 'shrface-mode)
+               (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
+               (shrface-mode))
+              ((eq anki-card-mode-parent-mode 'fundamental-mode)
+               (fundamental-mode))
+              (t
+               (fundamental-mode)))
         (erase-buffer)
-        (setq beg (point))
-        ;; (insert id)
-        (insert "\n")
-        (setq end (point))
-        (put-text-property beg end 'anki-card entry)
 
         ;; insert the question template
         (insert (nth 1 template))
@@ -277,14 +269,16 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
     (let ((inhibit-read-only t) question answer)
       (with-current-buffer buff
         (anki-card-mode)
-        (define-key file-map [mouse-1] 'anki-file-mouse-1)
-        (define-key file-map [mouse-3] 'anki-file-mouse-3)
+        (cond ((eq anki-card-mode-parent-mode 'org-mode)
+               (org-mode))
+              ((eq anki-card-mode-parent-mode 'shrface-mode)
+               (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
+               (shrface-mode))
+              ((eq anki-card-mode-parent-mode 'fundamental-mode)
+               (fundamental-mode))
+              (t
+               (fundamental-mode)))
         (erase-buffer)
-        (setq beg (point))
-        ;; (insert id)
-        (insert "\n")
-        (setq end (point))
-        (put-text-property beg end 'anki-card entry)
 
         (setq question
               (with-temp-buffer
@@ -336,33 +330,33 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
   ;; Basic Replacements
   (goto-char (point-min))
   (while (re-search-forward (format "{{%s}}" mf) nil t)
-    (replace-match cf))
+    (replace-match cf nil t))
 
   ;; Special Replacements
   (when question
     (goto-char (point-min))
     (while (re-search-forward (format "{{FrontSide}}" mf) nil t)
-      (replace-match question)))
+      (replace-match question nil t)))
 
   ;; Hint Fields
   (goto-char (point-min))
   (while (re-search-forward (format "{{.*?:%s}}" mf) nil t)
-    (replace-match cf))
+    (replace-match cf nil t))
 
   (goto-char (point-min))
   (while (re-search-forward (format "{{.%s}}" mf) nil t)
-    (replace-match cf)))
+    (replace-match cf nil t)))
 
 (defun anki-field-replace-media ()
   ;; replace the src to point to local files
   (goto-char (point-min))
   (while (re-search-forward "src=\"\\(.*?\\)\"" nil t)
-    (replace-match (format "src=\"%s%s\"" (concat (file-name-as-directory anki-collection-dir) "collection.media/") (match-string 1))))
+    (replace-match (format "src=\"%s%s\"" (concat (file-name-as-directory anki-collection-dir) "collection.media/") (match-string 1)) nil t))
 
   ;; replace the sound files to point to local files
   (goto-char (point-min))
   (while (re-search-forward "\\[sound:\\(.*?\\)\\]" nil t)
-    (replace-match (format "<a href=\"%s%s\">Play</a>" (concat (file-name-as-directory anki-collection-dir) "collection.media/") (match-string 1)))))
+    (replace-match (format "<a href=\"%s%s\">Play</a>" (concat (file-name-as-directory anki-collection-dir) "collection.media/") (match-string 1)) nil t)))
 
 (defun anki-render-org ()
   (unless (zerop (call-process-region (point-min) (point-max) "pandoc"
