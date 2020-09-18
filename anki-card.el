@@ -255,7 +255,8 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
 
 (defun anki-preview-front ()
   (interactive)
-  (anki-show-front (anki-find-card-at-point) :switch))
+  (anki-show-front (anki-find-card-at-point) :switch)
+  (anki-play-audio))
 
 (defun anki-show-back (entry &optional switch)
   "Display ENTRY in the current buffer.
@@ -327,7 +328,8 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
 
 (defun anki-preview-back ()
   (interactive)
-  (anki-show-back (anki-find-card-at-point) :switch))
+  (anki-show-back (anki-find-card-at-point) :switch)
+  (anki-play-audio))
 
 (defun anki-field-replace-basic (mf cf &optional question)
   "Replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements."
@@ -526,34 +528,37 @@ This function honors `shr-max-image-proportion' if possible."
 
 (defun anki-preview-card ()
   (interactive)
-  (anki-show-card (anki-find-card-at-point) :switch))
+  (anki-show-card (anki-find-card-at-point) :switch)
+  (anki-play-audio))
 
 (defun anki-models-names (model)
   (cl-loop for name in (gethash "flds" model) collect
            (gethash "name" name)))
 
-(defun anki-replay-audio (&optional external)
-  "Open a visible link in an `eww-mode' buffer.
-If EXTERNAL is single prefix, browse the URL using
-`browse-url-secondary-browser-function'.
-If EXTERNAL is double prefix, browse in new buffer."
-  (interactive "P")
+(defun anki-replay-audio ()
+  "Replay Audio If Possible."
+  (interactive)
   (if (process-live-p (get-process "anki-audio-player"))
       (kill-process (get-process "anki-audio-player")))
-  (if (equal major-mode 'anki-search-mode)
-    (anki-preview-card))
+  (cond ((equal major-mode 'anki-search-mode)
+         (funcall 'anki-preview-card)
+         (anki-play-audio))
+        ((equal major-mode 'anki-card-mode)
+         (anki-play-audio))))
+
+(defun anki-play-audio ()
+  "Collect and play the audio in current buffer"
+  (interactive)
+  ;; TODO: Play more than 1 audio
   (let ((sound (nth 1 (car (anki-shr-audio-collect)))))
-    (message (mapconcat 'identity
-                        `(,anki-audio-player
-                          ,@(delq nil (list (shell-quote-argument (expand-file-name sound)))))
-                        " ") )
-    (if (and anki-audio-player sound)
-        (start-process-shell-command
-         "anki-audio-player" nil
-         (mapconcat 'identity
-                    `(,anki-audio-player
-                      ,@(delq nil (list (shell-quote-argument (expand-file-name sound)))))
-                    " ")))))
+    (when sound
+      (message "Playing...")
+      (if (and anki-audio-player sound)
+          (start-process-shell-command
+           "anki-audio-player" nil
+           (mapconcat 'identity
+                      `(,anki-audio-player
+                        ,@(delq nil (list (shell-quote-argument (expand-file-name sound))))) " "))))))
 
 (defun anki-shr-audio-collect ()
   "Collect the positions of visible links in the current `anki-card' buffer."
