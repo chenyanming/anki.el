@@ -248,9 +248,9 @@ Argument QUERY-RESULT is the query result generate by sqlite."
              (mid (gethash 'mid card))
              (model-name (gethash "name" mid))
              (model-flds (gethash "flds" mid))
-             (template-name (anki-decode-tmpls ord mid)))
+             (template (anki-decode-tmpls ord mid)))
         ;; (format "%s  %s" deck-name (replace-regexp-in-string "\037" "   " flds))
-        (format "%s  %s  %s" deck-name (car template-name) sfld))))
+        (format "%s  %s  %s" deck-name (car template) sfld))))
 
 (defun anki-decode-tmpls (cord mid)
   (let (result)

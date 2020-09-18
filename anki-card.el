@@ -202,6 +202,166 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
         (switch-to-buffer-other-window (set-buffer (anki-search--buffer-name)))
         (goto-char original)))))
 
+(defun anki-show-front (entry &optional switch)
+  "Display ENTRY in the current buffer.
+Optional argument SWITCH to switch to *anki-search* buffer to other window."
+  (unless (eq major-mode 'anki-card-mode)
+    (when (get-buffer (anki-show--buffer-name entry))
+      (kill-buffer (anki-show--buffer-name entry))))
+  (let* ((buff (get-buffer-create (anki-show--buffer-name entry)))
+         (id (gethash 'id entry))       ; card id
+         (flds (gethash 'flds entry))   ; note fields
+         (model (gethash 'mid entry)) ; model names
+         (model-names (anki-models-names model))
+         (ord (gethash 'ord entry))     ; template number
+         (template (anki-decode-tmpls ord model))
+         (original (point))
+         (file-map (make-sparse-keymap))
+         beg end)
+    (let ((inhibit-read-only t))
+      (with-current-buffer buff
+        (anki-card-mode)
+        (define-key file-map [mouse-1] 'anki-file-mouse-1)
+        (define-key file-map [mouse-3] 'anki-file-mouse-3)
+        (erase-buffer)
+        (setq beg (point))
+        ;; (insert id)
+        (insert "\n")
+        (setq end (point))
+        (put-text-property beg end 'anki-card entry)
+
+        ;; insert the question template
+        (insert (nth 1 template))
+
+        ;; replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements
+        (dolist (field (cl-mapcar 'cons model-names (split-string flds "\037")))
+          (let* ((mf (car field))
+                 (cf (cdr field)))
+            (anki-field-replace-basic mf cf)))
+
+        (anki-field-replace-media)
+
+        (if (eq anki-card-mode-parent-mode 'org-mode)
+            (anki-render-org)
+          (anki-render-html))
+
+        (setq anki-show-card entry)
+        (goto-char (point-min))))
+    (unless (eq major-mode 'anki-card-mode)
+      (funcall anki-show-card-switch buff)
+      (when switch
+        (switch-to-buffer-other-window (set-buffer (anki-search--buffer-name)))
+        (goto-char original)))))
+
+(defun anki-preview-front ()
+  (interactive)
+  (anki-show-front (anki-find-card-at-point) :switch))
+
+(defun anki-show-back (entry &optional switch)
+  "Display ENTRY in the current buffer.
+Optional argument SWITCH to switch to *anki-search* buffer to other window."
+  (unless (eq major-mode 'anki-card-mode)
+    (when (get-buffer (anki-show--buffer-name entry))
+      (kill-buffer (anki-show--buffer-name entry))))
+  (let* ((buff (get-buffer-create (anki-show--buffer-name entry)))
+         (id (gethash 'id entry))       ; card id
+         (flds (gethash 'flds entry))   ; note fields
+         (model (gethash 'mid entry)) ; model names
+         (model-names (anki-models-names model))
+         (ord (gethash 'ord entry))     ; template number
+         (template (anki-decode-tmpls ord model))
+         (original (point))
+         (file-map (make-sparse-keymap))
+         beg end)
+    (let ((inhibit-read-only t) question answer)
+      (with-current-buffer buff
+        (anki-card-mode)
+        (define-key file-map [mouse-1] 'anki-file-mouse-1)
+        (define-key file-map [mouse-3] 'anki-file-mouse-3)
+        (erase-buffer)
+        (setq beg (point))
+        ;; (insert id)
+        (insert "\n")
+        (setq end (point))
+        (put-text-property beg end 'anki-card entry)
+
+        (setq question
+              (with-temp-buffer
+                ;; insert the question template
+                (insert (nth 1 template))
+
+                ;; replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements
+                (dolist (field (cl-mapcar 'cons model-names (split-string flds "\037")))
+                  (let* ((mf (car field))
+                         (cf (cdr field)))
+                    (anki-field-replace-basic mf cf)))
+                (buffer-string)))
+
+        (setq answer
+              (with-temp-buffer
+                ;; insert the answer template
+                (insert (nth 2 template))
+
+                ;; replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements
+                (dolist (field (cl-mapcar 'cons model-names (split-string flds "\037")))
+                  (let* ((mf (car field))
+                         (cf (cdr field)))
+                    (anki-field-replace-basic mf cf question)))
+                (buffer-string)))
+
+        (insert answer)
+
+        (anki-field-replace-media)
+
+        (if (eq anki-card-mode-parent-mode 'org-mode)
+            (anki-render-org)
+          (anki-render-html))
+
+        (setq anki-show-card entry)
+        (goto-char (point-min))))
+    (unless (eq major-mode 'anki-card-mode)
+      (funcall anki-show-card-switch buff)
+      (when switch
+        (switch-to-buffer-other-window (set-buffer (anki-search--buffer-name)))
+        (goto-char original)))))
+
+(defun anki-preview-back ()
+  (interactive)
+  (anki-show-back (anki-find-card-at-point) :switch))
+
+(defun anki-field-replace-basic (mf cf &optional question)
+  "Replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements."
+  ;; Basic Replacements
+  (goto-char (point-min))
+  (while (re-search-forward (format "{{%s}}" mf) nil t)
+    (replace-match cf))
+
+  ;; Special Replacements
+  (when question
+    (goto-char (point-min))
+    (while (re-search-forward (format "{{FrontSide}}" mf) nil t)
+      (replace-match question)))
+
+  ;; Hint Fields
+  (goto-char (point-min))
+  (while (re-search-forward (format "{{.*?:%s}}" mf) nil t)
+    (replace-match cf))
+
+  (goto-char (point-min))
+  (while (re-search-forward (format "{{.%s}}" mf) nil t)
+    (replace-match cf)))
+
+(defun anki-field-replace-media ()
+  ;; replace the src to point to local files
+  (goto-char (point-min))
+  (while (re-search-forward "src=\"\\(.*?\\)\"" nil t)
+    (replace-match (format "src=\"%s%s\"" (concat (file-name-as-directory anki-collection-dir) "collection.media/") (match-string 1))))
+
+  ;; replace the sound files to point to local files
+  (goto-char (point-min))
+  (while (re-search-forward "\\[sound:\\(.*?\\)\\]" nil t)
+    (replace-match (format "<a href=\"%s%s\">Play</a>" (concat (file-name-as-directory anki-collection-dir) "collection.media/") (match-string 1)))))
+
 (defun anki-render-org ()
   (unless (zerop (call-process-region (point-min) (point-max) "pandoc"
                                       t t nil
