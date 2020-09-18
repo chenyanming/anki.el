@@ -243,8 +243,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
                (browse-url-of-buffer))
               (t
                (insert final)
-               (setq anki-show-card entry)
-               (goto-char (point-min))))
+               (setq anki-show-card entry)))
 
         (if (eq anki-card-mode-parent-mode 'org-mode)
             (anki-render-org)
@@ -252,6 +251,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
     (unless (eq major-mode 'anki-card-mode)
       (when (eq switch :switch)
         (funcall anki-show-card-switch buff)
+        (goto-char (point-min))
         (switch-to-buffer-other-window (set-buffer (anki-search--buffer-name)))
         (goto-char original)))))
 
@@ -330,14 +330,14 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
                (browse-url-of-buffer))
               (t
                (insert final)
-               (setq anki-show-card entry)
-               (goto-char (point-min))))
+               (setq anki-show-card entry)))
         (if (eq anki-card-mode-parent-mode 'org-mode)
             (anki-render-org)
           (anki-render-html))))
     (unless (eq major-mode 'anki-card-mode)
       (when (eq switch :switch)
         (funcall anki-show-card-switch buff)
+        (goto-char (point-min))
         (switch-to-buffer-other-window (set-buffer (anki-search--buffer-name)))
         (goto-char original)))))
 
