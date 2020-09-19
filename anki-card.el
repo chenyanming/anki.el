@@ -573,6 +573,21 @@ This function honors `shr-max-image-proportion' if possible."
           (shr-render-region (point-min) (point-max))))))
   (run-hooks 'anki-post-html-render-hook))
 
+(defun anki-render-region (beg end)
+  "Render HTML in current buffer with shr."
+  (let (;; HACK: make buttons use our own commands
+        (shr-map anki-shr-map)
+        (shr-external-rendering-functions anki-shr-rendering-functions)
+        (shr-use-fonts anki-variable-pitch))
+    ;; HACK: `shr-external-rendering-functions' doesn't cover
+    ;; every usage of `shr-tag-img'
+    (cl-letf (((symbol-function 'shr-tag-img) 'anki-render-img))
+      (if (eq anki-text-width t)
+          (cl-letf (((symbol-function 'shr-fill-line) 'ignore))
+            (shr-render-region beg end))
+        (let ((shr-width anki-text-width))
+          (shr-render-region beg end))))))
+
 
 (defun anki-card-quit ()
   "Quit the *anki-card*."
@@ -593,8 +608,9 @@ This function honors `shr-max-image-proportion' if possible."
 (defun anki-replay-audio ()
   "Replay Audio If Possible."
   (interactive)
-  (if (process-live-p (get-process "anki-audio-player"))
-      (kill-process (get-process "anki-audio-player")))
+  (let ((process (get-process "anki-audio-player")))
+    (if (process-live-p process)
+        (delete-process process)))
   (cond
    ;; if there is *anki-card* buffer
    ((get-buffer "*anki-card*")
@@ -610,6 +626,9 @@ This function honors `shr-max-image-proportion' if possible."
 (defun anki-play-audio ()
   "Collect and play the audio in current buffer"
   (interactive)
+  (let ((process (get-process "anki-audio-player")))
+    (if (process-live-p process)
+        (delete-process process)))
   ;; TODO: Play more than 1 audio
   (let ((sound (nth 1 (car (anki-shr-audio-collect)))))
     (when sound
@@ -624,7 +643,7 @@ This function honors `shr-max-image-proportion' if possible."
 (defun anki-shr-audio-collect ()
   "Collect the positions of visible links in the current `anki-card' buffer."
   (save-excursion
-    (with-current-buffer (get-buffer "*anki-card*")
+    (with-current-buffer (or (get-buffer "*anki-card*") (get-buffer "*anki*"))
       (goto-char (point-min))
       (let (beg end string url collected-list)
         (setq end
