@@ -84,7 +84,8 @@ Pandoc >= 1.16 deprecates `--no-wrap' in favor of
 (defcustom anki-pandoc-replacements
   (list (cons (rx "") "")
         (cons (rx "%20") " ")
-        (cons "^\n$" ""))
+        (cons "^\n$" "")
+        (cons "\\\\" ""))
   "List of alists pairing regular expressions with a string that should replace each one.
 Used to clean output from Pandoc."
   :type '(alist :key-type string
@@ -265,6 +266,40 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
   (anki-show-front (anki-find-card-at-point) :browser)
   (anki-play-audio))
 
+(defun anki-get-card (entry)
+  "Get a ENTRY's question, answer and css."
+  (let* ((flds (gethash 'flds entry))   ; note fields
+         (model (gethash 'mid entry))   ; model names
+         (model-names (anki-models-names model))
+         (css (gethash "css" model))
+         (ord (gethash 'ord entry))     ; template number
+         (template (anki-decode-tmpls ord model)))
+    (setq question
+          (with-temp-buffer
+            ;; insert the question template
+            (insert (nth 1 template))
+
+            ;; replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements
+            (dolist (field (cl-mapcar 'cons model-names (split-string flds "\037")))
+              (let* ((mf (car field))
+                     (cf (cdr field)))
+                (anki-field-replace-basic mf cf)))
+            (anki-field-replace-media)
+            (buffer-string)))
+    (setq answer
+          (with-temp-buffer
+            ;; insert the answer template
+            (insert (nth 2 template))
+
+            ;; replace the {{field}} based on https://docs.ankiweb.net/#/templates/fields?id=field-replacements
+            (dolist (field (cl-mapcar 'cons model-names (split-string flds "\037")))
+              (let* ((mf (car field))
+                     (cf (cdr field)))
+                (anki-field-replace-basic mf cf question)))
+            (anki-field-replace-media)
+            (buffer-string)))
+    (list question answer css)))
+
 (defun anki-show-back (entry &optional switch)
   "Display ENTRY in the current buffer.
 Optional argument SWITCH to switch to *anki-search* buffer to other window."
@@ -274,7 +309,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
   (let* ((buff (get-buffer-create (anki-show--buffer-name entry)))
          (id (gethash 'id entry))       ; card id
          (flds (gethash 'flds entry))   ; note fields
-         (model (gethash 'mid entry)) ; model names
+         (model (gethash 'mid entry))   ; model names
          (model-names (anki-models-names model))
          (css (gethash "css" model))
          (ord (gethash 'ord entry))     ; template number
@@ -442,7 +477,7 @@ Bad characters are matched by `anki-pandoc-replacements'."
              do (progn
                   (goto-char (point-min))
                   (while (re-search-forward re nil t)
-                    (replace-match replacement))))))
+                    (replace-match replacement nil t))))))
 
 (defun anki--remove-html-blocks ()
   "Remove \"#+BEGIN_HTML...#+END_HTML\" blocks from current buffer."

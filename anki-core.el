@@ -70,6 +70,9 @@ ON cards.nid = notes.id
   :group 'anki
   :type 'string)
 
+(defvar anki-current-deck ""
+  "Current deck.")
+
 (defun anki-query (sql-query)
   "Query calibre databse and return the result.
 Argument SQL-QUERY is the sqlite sql query string."
@@ -290,7 +293,8 @@ Argument QUERY-RESULT is the query result generate by sqlite."
                       (vdecks (hash-table-values pdecks)))
                  (cl-loop for deck in vdecks collect
                           (cons (gethash "name" deck) (gethash "id" deck)))))
-         (selected-did (cdr (assoc (completing-read "Decks: " deck) deck))))
+         (deck-name (setq anki-current-deck (completing-read "Decks: " deck)))
+         (selected-did (cdr (assoc deck-name deck))))
     (setq anki-search-entries (cl-loop for entry in anki-full-entries collect
              (if (hash-table-p entry)
                  (let ((table-did (gethash 'did entry)))
