@@ -295,14 +295,24 @@ Argument QUERY-RESULT is the query result generate by sqlite."
                           (cons (gethash "name" deck) (gethash "id" deck)))))
          (deck-name (setq anki-current-deck (completing-read "Decks: " deck)))
          (selected-did (cdr (assoc deck-name deck))))
+    ;; Get all cards
+    (if anki-search-entries
+        anki-search-entries
+      (progn
+        (setq anki-search-entries (anki-format-cards))
+        (setq anki-full-entries anki-search-entries)))
+    ;; Filter cards
     (setq anki-search-entries
           (cl-loop for entry in anki-full-entries
                    when (hash-table-p entry)
-                       for table-did = (gethash 'did entry)
-                         if (hash-table-p table-did)
-                             if (equal selected-did (gethash "id" table-did))
-                             collect entry)))
-  (anki-browser))
+                   for table-did = (gethash 'did entry)
+                   if (hash-table-p table-did)
+                   if (equal selected-did (gethash "id" table-did))
+                   collect entry)))
+  (cond ((eq major-mode 'anki-search-mode)
+         (anki-browser))
+        (t
+         (anki 0))))
 
 (defun anki-list-models ()
   (interactive)
