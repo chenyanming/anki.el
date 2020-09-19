@@ -18,8 +18,15 @@
 
 * Description
 Yet another [[https://apps.ankiweb.net/][Anki]] Emacs Client.
+
+Anki Search Mode:
 #+attr_org: :width 600px
 [[file:img/anki.png]]
+
+Anki Mode:
+#+attr_org: :width 600px
+
+[[file:img/anki.gif]]
 
 * Features
 Current status:
