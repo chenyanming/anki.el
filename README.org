@@ -1,5 +1,5 @@
 #+TITLE:   Anki.el
-#+DATE:    September 14, 2020
+#+DATE:    September 19, 2020
 #+SINCE:   <replace with next tagged release version>
 #+STARTUP: inlineimages nofold
 
@@ -11,6 +11,10 @@
   - [[#require][require]]
   - [[#use-package][use-package]]
 - [[#usage][Usage]]
+- [[#related-packages][Related Packages]]
+- [[#newslogs][News/Logs]]
+  - [[#2020-09-19][=2020-09-19=]]
+  - [[#2020-09-14][=2020-09-14=]]
 
 * Description
 Yet another [[https://apps.ankiweb.net/][Anki]] Emacs Client.
@@ -20,10 +24,14 @@ Yet another [[https://apps.ankiweb.net/][Anki]] Emacs Client.
 * Features
 Current status:
 
-- Anki Cards Browser
-- List and switch deck
+- Anki Mode: Card Study Mode
+- Anki Search Mode: Anki Cards Browser
+- List and switch decks
 - Preview Card
-- Play audio
+- Preview Card's Front
+- Preview Card's Back
+- (Re)Play audio
+- Support [[https://github.com/chenyanming/shrface][shrface]]
  
 * Installation
 ** Clone to path
@@ -38,23 +46,59 @@ git clone git@github.com:chenyanming/anki.el.git ~/.emacs.d/lisp/anki/
 (setq sql-sqlite-program "/usr/bin/sqlite3")
 (setq anki-collection-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac")
 (setq anki-audio-player (or (executable-find "aplay") (executable-find "afplay")))
+;; (require 'shrface) ; If you use shrface, require it here
 (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
 #+END_SRC
 
 ** use-package
 #+BEGIN_SRC emacs-lisp
 (use-package anki
+  :defer t
   :load-path "~/.emacs.d/lisp/anki/"
+  :init
+  (add-hook 'anki-mode-hook #'shrface-mode)
+  (autoload 'anki "anki")
+  (autoload 'anki-browser "anki")
+  (autoload 'anki-list-decks "anki")
   :config
+  ;; (require 'shrface) ; If you use shrface, require it here
+  (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
   (setq sql-sqlite-program "/usr/bin/sqlite3")
-  (setq anki-collection-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac")
-  (setq anki-audio-player (or (executable-find "aplay") (executable-find "afplay")))
-  (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions)))
+  (cond ((string= (getenv "PC_NAME") "macbook")
+         (setq anki-collection-dir "/Users/chandamon/Library/Application Support/Anki2/User 1"))
+        ((string= (getenv "PC_NAME") "imac")
+         (setq anki-collection-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac"))
+        (t "")))
 #+END_SRC
 
 * Usage
+Enter anki mode:
+#+BEGIN_SRC emacs-lisp
+M-x anki
+#+END_SRC
+
+Start from deck lists:
+#+BEGIN_SRC emacs-lisp
+M-x anki-list-decks
+#+END_SRC
+
+Enter anki search mode:
 #+BEGIN_SRC emacs-lisp
 M-x anki-browser
 #+END_SRC
 
-~RET~ to preview card, ~r~ play audio, ~l~ to list deck,  ~q~ to quit.
+- ~r~ (Re)play audio
+- ~l~ List and switch deck
+- ~q~ Quit.
+
+* Related Packages
+- [[https://github.com/chenyanming/shrface][shrface]]: Enable org features on shr-rendered buffers, without the heaviness of org.
+
+* News/Logs
+** =2020-09-19=
+Version *0.2.0*:
+- New Features: ~anki~
+
+** =2020-09-14=
+Version *0.1.0*:
+- New Features: ~anki-browser~, ~anki-list-decks~

@@ -287,6 +287,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
   (if input
       (gethash input models)))
 
+;;;###autoload
 (defun anki-list-decks ()
   (interactive)
   (let* ((deck (let* ((pdecks (anki-parse-decks))

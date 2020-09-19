@@ -6,7 +6,7 @@
 ;; URL: https://github.com/chenyanming/calibredb.el
 ;; Keywords: tools
 ;; Created: 14 Sep 2020
-;; Version: 0.1.0
+;; Version: 0.2.0
 ;; Package-Requires: ((emacs "25.1"))
 
 ;; This file is NOT part of GNU Emacs.
@@ -94,6 +94,7 @@
           (concat (propertize "q" 'face 'bold) "uit")
           (concat (number-to-string anki-number))))
 
+;;;###autoload
 (defun anki (&optional index)
   "Start to learn anki.
 Optional argument INDEX is the number of anki in the list."

@@ -156,6 +156,7 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
         (goto-char (point-min))         ; back to point-min after filtering
         (setf anki-search-last-update (float-time))))))
 
+;;;###autoload
 (defun anki-browser ()
   "Enter calibre Search Buffer."
   (interactive)
