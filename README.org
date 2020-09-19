@@ -64,6 +64,7 @@ git clone git@github.com:chenyanming/anki.el.git ~/.emacs.d/lisp/anki/
   :load-path "~/.emacs.d/lisp/anki/"
   :init
   (add-hook 'anki-mode-hook #'shrface-mode)
+  (add-hook 'anki-card-mode-hook #'shrface-mode)
   (autoload 'anki "anki")
   (autoload 'anki-browser "anki")
   (autoload 'anki-list-decks "anki")

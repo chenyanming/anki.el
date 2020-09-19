@@ -156,15 +156,6 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
     (let ((inhibit-read-only t))
       (with-current-buffer buff
         (anki-card-mode)
-        (cond ((eq anki-card-mode-parent-mode 'org-mode)
-               (org-mode))
-              ((eq anki-card-mode-parent-mode 'shrface-mode)
-               (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
-               (shrface-mode))
-              ((eq anki-card-mode-parent-mode 'fundamental-mode)
-               (fundamental-mode))
-              (t
-               (fundamental-mode)))
         (define-key file-map [mouse-1] 'anki-file-mouse-1)
         (define-key file-map [mouse-3] 'anki-file-mouse-3)
         (erase-buffer)
@@ -186,7 +177,16 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
           (anki-render-html))
 
         (setq anki-show-card entry)
-        (goto-char (point-min))))
+        (goto-char (point-min))
+        (cond ((eq anki-card-mode-parent-mode 'org-mode)
+               (org-mode))
+              ((eq anki-card-mode-parent-mode 'shrface-mode)
+               (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
+               (shrface-mode))
+              ((eq anki-card-mode-parent-mode 'fundamental-mode)
+               (fundamental-mode))
+              (t
+               (fundamental-mode)))))
     (unless (eq major-mode 'anki-card-mode)
       (funcall anki-show-card-switch buff)
       (when switch
@@ -213,17 +213,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
     (let ((inhibit-read-only t) final)
       (with-current-buffer buff
         (anki-card-mode)
-        (cond ((eq anki-card-mode-parent-mode 'org-mode)
-               (org-mode))
-              ((eq anki-card-mode-parent-mode 'shrface-mode)
-               (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
-               (shrface-mode))
-              ((eq anki-card-mode-parent-mode 'fundamental-mode)
-               (fundamental-mode))
-              (t
-               (fundamental-mode)))
         (erase-buffer)
-
         (setq final
               (with-temp-buffer
                 ;; insert the question template
@@ -248,7 +238,16 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
 
         (if (eq anki-card-mode-parent-mode 'org-mode)
             (anki-render-org)
-          (anki-render-html))))
+          (anki-render-html))
+        (cond ((eq anki-card-mode-parent-mode 'org-mode)
+               (org-mode))
+              ((eq anki-card-mode-parent-mode 'shrface-mode)
+               (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
+               (shrface-mode))
+              ((eq anki-card-mode-parent-mode 'fundamental-mode)
+               (fundamental-mode))
+              (t
+               (fundamental-mode)))))
     (unless (eq major-mode 'anki-card-mode)
       (when (eq switch :switch)
         (funcall anki-show-card-switch buff)
@@ -320,17 +319,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
     (let ((inhibit-read-only t) final)
       (with-current-buffer buff
         (anki-card-mode)
-        (cond ((eq anki-card-mode-parent-mode 'org-mode)
-               (org-mode))
-              ((eq anki-card-mode-parent-mode 'shrface-mode)
-               (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
-               (shrface-mode))
-              ((eq anki-card-mode-parent-mode 'fundamental-mode)
-               (fundamental-mode))
-              (t
-               (fundamental-mode)))
         (erase-buffer)
-
         (setq final
               (with-temp-buffer
                 (let* ((question
@@ -368,7 +357,16 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
                (setq anki-show-card entry)))
         (if (eq anki-card-mode-parent-mode 'org-mode)
             (anki-render-org)
-          (anki-render-html))))
+          (anki-render-html))
+        (cond ((eq anki-card-mode-parent-mode 'org-mode)
+               (org-mode))
+              ((eq anki-card-mode-parent-mode 'shrface-mode)
+               (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
+               (shrface-mode))
+              ((eq anki-card-mode-parent-mode 'fundamental-mode)
+               (fundamental-mode))
+              (t
+               (fundamental-mode)))))
     (unless (eq major-mode 'anki-card-mode)
       (when (eq switch :switch)
         (funcall anki-show-card-switch buff)
