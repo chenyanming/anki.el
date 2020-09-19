@@ -90,21 +90,21 @@ When live editing the filter, it is bound to :live.")
 (defun anki-search-header ()
   "TODO: Return the string to be used as the Calibredb header.
 Indicating the library you use."
-  "Anki"
-  ;; (format "%s: %s   %s"
-  ;;         (propertize anki-virtual-library-name 'face font-lock-preprocessor-face)
-  ;;         (propertize anki-root-dir 'face font-lock-type-face)
-  ;;         (concat
-  ;;          (propertize (format "Total: %s"
-  ;;                              (if (equal anki-search-entries '(""))
-  ;;                                  "0   "
-  ;;                                (concat (number-to-string (length anki-search-entries)) "   "))) 'face font-lock-warning-face)
-  ;;          (propertize (format "%s" (if (equal anki-search-filter "")
-  ;;                                       ""
-  ;;                                     (concat anki-search-filter "   "))) 'face font-lock-keyword-face)
-  ;;          (propertize (let ((len (length (anki-find-marked-candidates))))
-  ;;                        (if (> len 0)
-  ;;                            (concat "Marked: " (number-to-string len)) "")) 'face font-lock-negation-char-face)))
+  (format "%s: %s   %s"
+          (propertize "Anki Browser" 'face font-lock-warning-face)
+          anki-current-deck
+          (concat
+           (propertize (format "Total: %s"
+                               (if (equal anki-search-entries '(""))
+                                   "0   "
+                                 (concat (number-to-string (length anki-search-entries)) "   "))) 'face font-lock-warning-face)
+           (propertize (format "%s" (if (equal anki-search-filter "")
+                                        ""
+                                      (concat anki-search-filter "   "))) 'face font-lock-keyword-face)
+           ;; (propertize (let ((len (length (anki-find-marked-candidates))))
+           ;;               (if (> len 0)
+           ;;                   (concat "Marked: " (number-to-string len)) "")) 'face font-lock-negation-char-face)
+           ))
   )
 
 (defun anki-search--minibuffer-setup ()
@@ -209,7 +209,10 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
                (kill-buffer-and-window)
              (kill-buffer)))
           ((get-buffer "*anki-search*")
-           (kill-buffer "*anki-search*")))))
+           (kill-buffer "*anki-search*")))
+    (let ((process (get-process "anki-audio-player")))
+      (if (process-live-p process)
+          (delete-process process)))))
 
 (defun anki-search-update ()
   "Refresh anki."
