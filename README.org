@@ -72,11 +72,8 @@ git clone git@github.com:chenyanming/anki.el.git ~/.emacs.d/lisp/anki/
   ;; (require 'shrface) ; If you use shrface, require it here
   (setq anki-shr-rendering-functions (append anki-shr-rendering-functions shr-external-rendering-functions))
   (setq sql-sqlite-program "/usr/bin/sqlite3")
-  (cond ((string= (getenv "PC_NAME") "macbook")
-         (setq anki-collection-dir "/Users/chandamon/Library/Application Support/Anki2/User 1"))
-        ((string= (getenv "PC_NAME") "imac")
-         (setq anki-collection-dir "/Users/damonchan/Library/Application Support/Anki2/Android & Mac"))
-        (t "")))
+  ;; Set up the collection directory, which should contain a file - collection.anki2 and a folder - collection.media
+  (setq anki-collection-dir "/Users/chandamon/Library/Application Support/Anki2/User 1"))
 #+END_SRC
 
 * Usage
