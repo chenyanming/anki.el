@@ -73,6 +73,9 @@ ON cards.nid = notes.id "
 (defvar anki-current-deck ""
   "Current deck.")
 
+(defvar anki-core-database nil
+  "TODO: A hash table to save the whole database.")
+
 (defun anki-core-query (sql-query)
   "Query calibre databse and return the result.
 Argument SQL-QUERY is the sqlite sql query string."
@@ -232,6 +235,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
              do (progn
                   (puthash 'card-format (anki-core-format-card-hash-table card) card)
                   (puthash (gethash 'id card) card cards)))
+    (setq anki-core-database cards)
     cards)
 
   ;; (let ((cards (anki-core-parse-cards)) result)
@@ -241,13 +245,13 @@ Argument QUERY-RESULT is the query result generate by sqlite."
   )
 
 (defun anki-core-format-card-plist (card)
-  "Format one card ITEM."
+  "NOT USED: Format one card ITEM."
   (let* ((flds (plist-get card :flds))
          (sfld (plist-get card :sfld)))
     (format "%s          %s" sfld (replace-regexp-in-string "\037" "\n" flds))))
 
 (defun anki-core-format-card-hash-table (card)
-  "Format one card ITEM."
+  "Format CARD to one string which used in *anki-search*."
   (if (hash-table-p card)
       (let* ((ord (gethash 'ord card))
              (sfld (gethash 'sfld card))
@@ -307,7 +311,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
     (if anki-search-entries
         anki-search-entries
       (progn
-        (setq anki-search-entries (hash-table-values (anki-core-cards-list)))
+        (setq anki-search-entries (anki-core-cards-list))
         (setq anki-full-entries anki-search-entries)))
     ;; Filter cards
     (setq anki-search-entries
@@ -340,5 +344,28 @@ Argument QUERY-RESULT is the query result generate by sqlite."
       (insert-file-contents file)
       (goto-char (point-min))
       (set symbol (read (current-buffer))))))
+
+(defun anki-core-backup-database (&rest rest)
+  "TODO: Backup the anki database to a text file, except media files."
+  (interactive)
+  (let* ((date (format-time-string "%Y-%m-%d"))
+        (file (read-file-name "Save Anki Database to: " "~" (concat "Anki_Backup_" date ".txt") (pop rest))))
+    (anki-core-write (shell-quote-argument (expand-file-name file)) (anki-core-cards))))
+
+(defun anki-core-load-database ()
+  "TODO: Load the anki database which is genereated by `anki-core-backup'."
+  (interactive)
+  (let* ((file (read-file-name "Load Anki Database: " "~" )))
+    (anki-core-read (shell-quote-argument (expand-file-name file)) 'anki-core-database)
+    (setq anki-full-entries (hash-table-values anki-core-database))
+    (setq anki-search-entries (hash-table-values anki-core-database))))
+
+(defun anki-core-backup-learn-data (&rest rest)
+  "TODO: Backup the anki learn data to a text file."
+  (interactive))
+
+(defun anki-core-load-learn-data (&rest rest)
+  "TODO: Load the anki learn data."
+  (interactive))
 
 (provide 'anki-core)

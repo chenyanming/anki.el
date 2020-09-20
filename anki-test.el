@@ -1294,3 +1294,14 @@
                                                                                                                                                                                                                                                              ("sticky" nil "rtl" nil "ord" 3 "media" nil "size" 20 "font" "Al Bayan" "name" "例句")))
                                                                                                                                                                                                                                             "tags" nil "mod" 1498883427 "type" 0 "sortf" 0 "did" 1437750264722 "usn" 0 "vers" nil "latexPost" "\\end{document}" "name" "日文" "css" ".card {font-family: Helvetica, arial; font-size: 24px;\n text-align: center;\n color: white;\n background-color: black;\n}\n.front {font-size: 1em;}\n.front2 {font-size: 1.5em; font-weight:bold;}\n.frontWord {font-size: 1.5em;font-weight:bold;}\n.word {padding: 0.2em; font-size: 0.9em}\n.sentance {padding: 1em 0; font-size: 0.8em;text-align:left;}"))
                   mod-1 "1437784284" usn-1 "16" tags "" flds "わたし<b>私</b><br />我" sfld "わたし" csum "3087142304" flags-1 "0" data-1 "" card-format "大家的日本語 & Core & 汉字::大家的日本語_01-10  大家的日本語 & Core & 汉字::大家的日本語_01-10  2019-11-10 Sun 12:15:54  わたし"))
+
+(anki-core-write "~/anki-learn.txt" (anki-core-cards))
+(defvar anki-test nil)
+(anki-core-read "~/anki-learn.txt" 'anki-test)
+
+(benchmark 1 '(anki-core-cards))
+
+(anki-learn-smart-reschedule 3)
+
+(anki-learn-get-due-data "1306463892572")
+(anki-learn-get-due-date "1306463892572")
