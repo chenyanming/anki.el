@@ -1136,26 +1136,26 @@
                         (setq i (+ 32 i)) i (single-key-description i)))
         (setq i (- i 96))))))
 
-(anki-parse-cards)
-(completing-read "Browse Cards: " (anki-format-cards))
-(gethash "1573359373068" (anki-parse-decks) )
-(gethash "id" (gethash "1581830143591" (anki-parse-decks) ) )
-(cl-loop for name in (gethash "flds" (gethash "1434531251878" (anki-parse-models))) collect
+(anki-core-parse-cards)
+(completing-read "Browse Cards: " (anki-core-cards-list))
+(gethash "1573359373068" (anki-core-parse-decks) )
+(gethash "id" (gethash "1581830143591" (anki-core-parse-decks) ) )
+(cl-loop for name in (gethash "flds" (gethash "1434531251878" (anki-core-parse-models))) collect
          (gethash "name" name))
 
-(benchmark 1 '(anki-parse-cards))
-(benchmark 1 '(anki-parse-decks))
-(benchmark 1 '(anki-parse-models))
-(benchmark 1 '(anki-format-cards))
+(benchmark 1 '(anki-core-parse-cards))
+(benchmark 1 '(anki-core-parse-decks))
+(benchmark 1 '(anki-core-parse-models))
+(benchmark 1 '(anki-core-cards-list))
 
 (profiler-start 'cpu)
 (profiler-stop)
-(anki-parse-cards)
+(anki-core-parse-cards)
 (profiler-report)
 
 (insert "")
 
-(anki-decode-mid "1434531251878" (anki-parse-models) )
+(anki-core-decode-mid "1434531251878" (anki-core-parse-models) )
 
 (let (table)
   (setq table #s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8125 data
@@ -1200,7 +1200,7 @@
 
 
 
-(anki-decode-tmpls "1" #s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8125 data
+(anki-core-decode-tmpls "1" #s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8125 data
                                                                                                                                                                                                                            ("id" "1414923096984" "tmpls"
                                                                                                                                                                                                                             (#s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8125 data
                                                                                                                                                                                                                                            ("ord" 0 "did" nil "bafmt" "" "afmt" "<div class=\"cardcontainer answer\">\n\n<div class=\"header\">{{Full header}}</div>\n\n<div>{{Stroke order}}</div>\n\n{{Description}}\n\n{{#Full onyomi}}\n<h2>Onyomi</h2>\n{{Full onyomi}}\n{{/Full onyomi}}\n\n{{#Full mnemonic}}\n<h2>Mnemonic</h2>\n{{Full mnemonic}}\n{{/Full mnemonic}}\n\n{{#Full kunyomi}}\n<h2>Kunyomi</h2>\n{{Full kunyomi}}\n{{/Full kunyomi}}\n\n{{#Full jukugo}}\n<h2>Jukugo</h2>\n{{Full jukugo}}\n{{/Full jukugo}}\n\n{{#Full lookalikes}}\n<h2>Lookalikes</h2>\n{{Full lookalikes}}\n{{/Full lookalikes}}\n\n{{#Full used In}}\n<h2>Used in</h2>\n{{Full used In}}\n{{/Full used In}}\n\n</div>" "qfmt" "<div class=\"cardcontainer\">\n<p class=\"translation question\">{{Meaning}}</p>\n\n<div class=\"questionhelp\">\n<p class=\"onyomi\">{{Onyomi}}</p>\n<p>{{First kunyomi}}</p>\n<p>{{kana:First jukugo}}</p>\n</div>\n</div>" "bqfmt" "" "name" "Write"))

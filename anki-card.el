@@ -206,7 +206,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
          (css (gethash "css" model))
          (model-names (anki-models-names model))
          (ord (gethash 'ord entry))     ; template number
-         (template (anki-decode-tmpls ord model))
+         (template (anki-core-decode-tmpls ord model))
          (original (point))
          (file-map (make-sparse-keymap))
          beg end)
@@ -272,7 +272,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
          (model-names (anki-models-names model))
          (css (gethash "css" model))
          (ord (gethash 'ord entry))     ; template number
-         (template (anki-decode-tmpls ord model)))
+         (template (anki-core-decode-tmpls ord model)))
     (setq question
           (with-temp-buffer
             ;; insert the question template
@@ -312,7 +312,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
          (model-names (anki-models-names model))
          (css (gethash "css" model))
          (ord (gethash 'ord entry))     ; template number
-         (template (anki-decode-tmpls ord model))
+         (template (anki-core-decode-tmpls ord model))
          (original (point))
          (file-map (make-sparse-keymap))
          beg end)

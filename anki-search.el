@@ -164,10 +164,10 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
          (if anki-search-entries
              anki-search-entries
            (progn
-             (setq anki-search-entries (anki-format-cards))
+             (setq anki-search-entries (anki-core-cards-list))
              (setq anki-full-entries anki-search-entries)))
          ;; (progn
-         ;;   (setq anki-search-entries (anki-format-cards))
+         ;;   (setq anki-search-entries (anki-core-cards-list))
          ;;   (setq anki-full-entries anki-search-entries))
          ))
     (cond ((not cand)
@@ -218,7 +218,7 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
 (defun anki-search-update ()
   "Refresh anki."
   (interactive)
-  (setq anki-search-entries (anki-format-cards))
+  (setq anki-search-entries (anki-core-cards-list))
   (setq anki-full-entries anki-search-entries)
   (anki-browser))
 
