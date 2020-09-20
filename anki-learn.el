@@ -18,7 +18,7 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;;; Essentially copied from `org-drill.el', but modified to work on hash table.
+;;; Essentially copied from `org-learn.el', but modified to work on hash table.
 
 ;;; Code:
 
