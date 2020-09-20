@@ -103,7 +103,7 @@ Optional argument INDEX is the number of anki in the list."
   (if anki-search-entries
       anki-search-entries
     (progn
-      (setq anki-search-entries (anki-format-cards))
+      (setq anki-search-entries (anki-core-cards-list))
       (setq anki-full-entries anki-search-entries)))
   (switch-to-buffer (get-buffer-create "*anki*"))
   (setq buffer-read-only nil)
