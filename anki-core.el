@@ -82,8 +82,9 @@ Argument SQL-QUERY is the sqlite sql query string."
     (if (file-exists-p file)
         (progn
           ;; TODO Copy to temp file to avoid database collision, but not ideal solution.
-          (copy-file file temp t)
-          (let ((cmd (format "%s -separator %s -newline %s -list -nullvalue \"\" -noheader %s \"%s\""
+          (let ((cmd (format "cp %s %s && %s -separator %s -newline %s -list -nullvalue \"\" -noheader %s \"%s\""
+                             (shell-quote-argument (expand-file-name file))
+                             (shell-quote-argument (expand-file-name temp))
                              sql-sqlite-program
                              anki-sql-separator
                              anki-sql-newline
