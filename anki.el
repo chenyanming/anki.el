@@ -55,6 +55,12 @@
     ;; (define-key map "t" #'anki-toggle-anki)
     (define-key map "r" #'anki-play-audio)
     (define-key map "l" #'anki-list-decks)
+    (define-key map "0" #'anki-answer)
+    (define-key map "1" #'anki-answer)
+    (define-key map "2" #'anki-answer)
+    (define-key map "3" #'anki-answer)
+    (define-key map "4" #'anki-answer)
+    (define-key map "5" #'anki-answer)
     ;; (define-key map "]" #'anki-loop-inc)
     ;; (define-key map "[" #'anki-loop-dec)
     ;; (define-key map "a" #'anki-first)
@@ -85,7 +91,7 @@
           (propertize "Anki" 'face font-lock-warning-face)
           anki-current-deck
           ;; (concat (propertize "r" 'face 'bold) (if anki-in-sequence ":in sequence" ":random"))
-          (concat (propertize "l" 'face 'bold) "ist decks")
+          (concat (propertize "l" 'face 'bold) "ist")
           (concat (propertize "r" 'face 'bold) "eplay")
           ;; (if anki-loop-toggle (concat "(+" (number-to-string anki-loop-speed) "s) ") "")
           ;; (concat (propertize "v" 'face 'bold) "alidate")
@@ -112,6 +118,7 @@ Optional argument INDEX is the number of anki in the list."
   (setq anki-last-number anki-number)
   (let* ((item (or (nth (or index anki-number) anki-search-entries)
                    (nth (setq anki-number 0) anki-search-entries)))
+         (id (gethash 'id item))
          (card (anki-get-card item))
          (question (nth 0 card))
          (answer (nth 1 card))
@@ -121,19 +128,40 @@ Optional argument INDEX is the number of anki in the list."
          beg end)
     (setq anki-number number)
 
+
     (setq beg (point))
     (insert "<h1>Question</h1>")
     (insert question)
     (setq end (point))
     (put-text-property beg end 'question question)
+    (anki-render-region beg end)
+
+    ;; insert due date
+    (insert (concat "\n" (propertize (or (anki-learn-get-due-date id) "New Card")
+                                'face font-lock-keyword-face
+                                'mouse-face 'mode-line-highlight) "\n"))
+
+    ;; insert answer button
+    (let ((answer-map (make-sparse-keymap)))
+      (define-key answer-map [mouse-1] 'anki-answer-mouse-1)
+      (dolist (i '(0 1 2 3 4 5))
+        (insert (concat (propertize (format "%s" i)
+                            'face font-lock-warning-face
+                            'mouse-face 'mode-line-highlight
+                            'keymap answer-map) " " ))))
 
     (setq beg (point))
     (insert "<h1>Answer</h1>")
     (insert answer)
     (setq end (point))
     (put-text-property beg end 'answer answer)
+    (anki-render-region beg end)
 
-    (anki-render-html)
+    ;; (anki-render-html)
+
+
+
+    (put-text-property (point-min) (+ 1 (point-min) ) 'anki-entry item)
 
     (goto-char (point-min))             ; cursor is always in the (point-min)
     ;; (shrface-mode)
@@ -173,4 +201,28 @@ Optional argument INDEX is the number of anki in the list."
     (let ((process (get-process "anki-audio-player")))
       (if (process-live-p process)
           (delete-process process)))))
+
+(defun anki-answer ()
+  "TODO: This function automatically recognizes the number"
+  (interactive)
+  (let* ((event last-command-event)
+         (key (make-vector 1 event))
+         (key-desc (key-description key)))
+    (anki-learn-smart-reschedule (string-to-number (car (last (split-string key-desc "-")))))
+    (anki)))
+
+(defun anki-answer-mouse-1 (event)
+  "Visit the location click on.
+Argument EVENT mouse event."
+  (interactive "e")
+  (let ((window (posn-window (event-end event)))
+        (pos (posn-point (event-end event))))
+    (if (not (windowp window))
+        (error "No tag chosen"))
+    (with-current-buffer (window-buffer window)
+      (goto-char pos)
+      (anki-learn-smart-reschedule (string-to-number (word-at-point t)))
+      (anki))))
+
+
 (provide 'anki)

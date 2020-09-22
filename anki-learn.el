@@ -23,9 +23,11 @@
 ;;; Code:
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 
-(defcustom anki-learn-always-reschedule nil
+(defvar initial-repetition-state '(-1 1 2.5 nil))
+
+(defcustom anki-learn-always-reschedule t
   "If non-nil, always reschedule items, even if retention was \"perfect\"."
   :type 'boolean
   :group 'anki)
@@ -37,9 +39,18 @@ the changes of the OF matrix)."
   :type 'float
   :group 'anki)
 
+(defcustom anki-learn-sm5-initial-interval
+  0.1
+  "In the SM5 algorithm, the initial interval after the first
+successful presentation of an item is always 4 days. If you wish to change
+this, you can do so here."
+  :group 'anki
+  :type 'float)
+
+
 (defun initial-optimal-factor (n ef)
   (if (= 1 n)
-      4
+      anki-learn-sm5-initial-interval
     ef))
 
 (defun get-optimal-factor (n ef of-matrix)
@@ -74,50 +85,6 @@ the changes of the OF matrix)."
   (let ((temp (* of (+ 0.72 (* q 0.07)))))
     (+ (* (- 1 fraction) of) (* fraction temp))))
 
-(defun calculate-new-optimal-factor (interval-used quality used-of
-                                                   old-of fraction)
-  "This implements the SM-5 learning algorithm in Lisp.
-INTERVAL-USED is the last interval used for the item in question.
-QUALITY is the quality of the repetition response.
-USED-OF is the optimal factor used in calculation of the last
-interval used for the item in question.
-OLD-OF is the previous value of the OF entry corresponding to the
-relevant repetition number and the E-Factor of the item.
-FRACTION is a number belonging to the range (0,1) determining the
-rate of modifications (the greater it is the faster the changes
-of the OF matrix).
-
-Returns the newly calculated value of the considered entry of the
-OF matrix."
-  (let (;; the value proposed for the modifier in case of q=5
-        (mod5 (/ (1+ interval-used) interval-used))
-        ;; the value proposed for the modifier in case of q=2
-        (mod2 (/ (1- interval-used) interval-used))
-        ;; the number determining how many times the OF value will
-        ;; increase or decrease
-        modifier)
-    (if (< mod5 1.05)
-        (setq mod5 1.05))
-    (if (< mod2 0.75)
-        (setq mod5 0.75))
-    (if (> quality 4)
-        (setq modifier (1+ (* (- mod5 1) (- quality 4))))
-      (setq modifier (- 1 (* (/ (- 1 mod2) 2) (- 4 quality)))))
-    (if (< modifier 0.05)
-        (setq modifier 0.05))
-    (setq new-of (* used-of modifier))
-    (if (> quality 4)
-        (if (< new-of old-of)
-            (setq new-of old-of)))
-    (if (< quality 4)
-        (if (> new-of old-of)
-            (setq new-of old-of)))
-    (setq new-of (+ (* new-of fraction) (* old-of (- 1 fraction))))
-    (if (< new-of 1.2)
-        (setq new-of 1.2)
-      new-of)))
-
-(defvar initial-repetition-state '(-1 1 2.5 nil))
 
 (defun determine-next-interval (n ef quality of-matrix)
   (assert (> n 0))
@@ -159,43 +126,140 @@ OF matrix."
 (defun anki-learn-smart-reschedule (quality)
   "TODO: "
   (interactive "nHow well did you remember the information (on a scale of 0-5)? ")
-  (let* ((id (or (anki-find-card-id-at-point) "1306463892572"))
-         (learn-hash (anki-learn-get-card id))
-         (learn-str (anki-learn-get-due-data id))
-         (learn-data (or learn-str
-                         (copy-list initial-repetition-state)))
+  (let* ((id (anki-find-card-id-at-point))
+         (learn-index (anki-learn-get-card id))
+         (learn-data (anki-learn-get-learn-data id))
          closed-dates)
+    ;; next interval - learn data
     (setq learn-data
           (determine-next-interval (nth 1 learn-data)
                                    (nth 2 learn-data)
                                    quality
                                    (nth 3 learn-data)))
-    (puthash 'learn-data learn-data learn-hash)
+    (let ((learn-entry (assoc id anki-core-database-review-logs)))
+      (if learn-entry
+          (setf (cdr learn-entry) learn-data) ; if entry exists, only set learn data
+        (push (cons id learn-data) anki-core-database-review-logs))) ; if entry miss, push entry + learn data
+    (anki-core-backup-learn-data)                                    ; backup learn data
     (message (format-time-string "%Y-%m-%d %a %H:%M:%S" (time-add (current-time)
                                                                   (days-to-time (nth 0 learn-data)))))))
 
+
+
+;;; SM2 Algorithm =============================================================
+
+(defcustom anki-learn-add-random-noise-to-intervals-p
+  nil
+  "If true, the number of days until an item's next repetition
+will vary slightly from the interval calculated by the SM2
+algorithm. The variation is very small when the interval is
+small, but scales up with the interval."
+  :group 'anki
+  :type 'boolean)
+
+(defcustom anki-learn-failure-quality
+  1
+  "Lower bound for an recall to be marked as failure.
+
+If the quality of recall for an item is this number or lower,
+it is regarded as an unambiguous failure, and the repetition
+interval for the card is reset to 0 days.  If the quality is higher
+than this number, it is regarded as successfully recalled, but the
+time interval to the next repetition will be lowered if the quality
+was near to a fail.
+
+By default this is 2, for SuperMemo-like behaviour.  For
+Mnemosyne-like behaviour, set it to 1.  Other values are not
+really sensible."
+  :group 'anki
+  :type '(choice (const 2) (const 1)))
+
+
+
+(defun anki-learn-random-dispersal-factor ()
+  "Returns a random number between 0.5 and 1.5.
+
+This returns a strange random number distribution. See
+http://www.supermemo.com/english/ol/sm5.htm for details."
+  (let ((a 0.047)
+        (b 0.092)
+        (p (- (cl-random 1.0) 0.5)))
+    (cl-flet ((sign (n)
+                    (cond ((zerop n) 0)
+                          ((cl-plusp n) 1)
+                          (t -1))))
+      (/ (+ 100 (* (* (/ -1 b) (log (- 1 (* (/ b a ) (abs p)))))
+                   (sign p)))
+         100.0))))
+
+(defun determine-next-interval-sm2 (n ef quality of-matrix)
+  "TODO: Arguments:
+- LAST-INTERVAL -- the number of days since the item was last reviewed.
+- REPEATS -- the number of times the item has been successfully reviewed
+- EF -- the 'easiness factor'
+- QUALITY -- 0 to 5
+
+Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), where:
+- INTERVAL is the number of days until the item should next be reviewed
+- REPEATS is incremented by 1.
+- EF is modified based on the recall quality for the item.
+- OF-MATRIX is not modified."
+  (if (zerop n) (setq n 1))
+  (if (null ef) (setq ef 2.5))
+  (cl-assert (> n 0))
+  (cl-assert (and (>= quality 0) (<= quality 5)))
+  (if (<= quality anki-learn-failure-quality)
+      ;; When an item is failed, its interval is reset to 0,
+      ;; but its EF is unchanged
+      (list -1 1 ef of-matrix)
+    ;; else:
+    (let* ((next-ef (modify-e-factor ef quality))
+           (interval
+            (cond
+             ((<= n 1) 1)
+             ((= n 2) 6)
+             (t next-ef))))
+      (list interval
+            (1+ n)
+            next-ef
+            of-matrix))))
+
+
+
+
+
+
+
 (defun anki-find-card-id-at-point ()
   "TODO: "
-  (let ((card (anki-find-card-at-point)) )
+  (let ((card (anki-find-card-at-point)))
     (if (hash-table-p card)
         (gethash 'id card))))
 
 (defun anki-learn-get-card (id)
-  "TODO: "
-  (gethash id anki-core-database))
+  "TODO: Get card based on card id."
+  (rassoc id anki-core-database-index))
 
 
-(defun anki-learn-get-due-data (id)
-  "TODO: "
-  (gethash 'learn-data (gethash id anki-core-database)))
+(defun anki-learn-get-learn-data (id)
+  "TODO: Get due data based on card id."
+   (let ((due-data (cdr (assoc id anki-core-database-review-logs)) ) )
+     (if due-data
+         due-data
+       (copy-list initial-repetition-state))))
 
 (defun anki-learn-get-due-date (id)
-  "TODO: "
-  (let* ((learn-str (anki-learn-get-due-data id))
-         (learn-data (or learn-str
-                         (copy-list initial-repetition-state))))
-    (message (format-time-string "%Y-%m-%d %a %H:%M:%S" (time-add (current-time)
-                                                                  (days-to-time (nth 0 learn-data)))))))
+  "TODO: Get due date based on card id."
+  (let ((learn-data (anki-learn-get-learn-data id)))
+    (unless (equal learn-data initial-repetition-state) ; if new card no due date
+        (format-time-string "%Y-%m-%d %a %H:%M:%S"
+                            (time-add (current-time)
+                                      (days-to-time (nth 0 learn-data)))))
+
+    ;; (message (format-time-string "%Y-%m-%d %a %H:%M:%S"
+    ;;                              (time-add (current-time)
+    ;;                                        (days-to-time (nth 0 learn-data)))))
+    ))
 
 (provide 'anki-learn)
 

@@ -73,8 +73,11 @@ ON cards.nid = notes.id "
 (defvar anki-current-deck ""
   "Current deck.")
 
-(defvar anki-core-database nil
-  "TODO: A hash table to save the whole database.")
+(defvar anki-core-database-index '()
+  "Anki core database index.")
+
+(defvar anki-core-database-review-logs '()
+  "Anki core database review logs.")
 
 (defun anki-core-query (sql-query)
   "Query calibre databse and return the result.
@@ -134,6 +137,8 @@ Argument SQL-QUERY is the sqlite sql query string."
          (lines (if query-result (split-string query-result anki-sql-newline)))
          (decks (anki-core-parse-decks))
          (models (anki-core-parse-models)))
+    (setq anki-core-database-index '())
+    (anki-core-load-learn-data)         ; load the learn data
     (cond ((equal "" query-result) '(""))
           (t
            ;; (let (result)
@@ -143,11 +148,10 @@ Argument SQL-QUERY is the sqlite sql query string."
            ;;     ;; (push (anki-core-parse-card-to-plist line decks) result)
            ;;     ))
 
-           (cl-loop for line in lines collect
-                    (unless (equal line "")            ; avoid empty line
-                        (anki-core-parse-card-to-hash-table line decks models)))
-
-           ))))
+           ;; collect lines of sql result into hash tables
+           (cl-loop for line in lines
+                    if (not (equal line "" ))            ; avoid empty line
+                    collect (anki-core-parse-card-to-hash-table line decks models))))))
 
 (defun anki-core-parse-card-to-plist (query-result decks)
   "Builds alist out of a full `anki-core-query' query record result.
@@ -191,6 +195,8 @@ Argument QUERY-RESULT is the query result generate by sqlite."
     (if query-result
         (let ((spl-query-result (split-string query-result anki-sql-separator)))
           ;; (puthash 'id              (anki-decode-milliseconds (nth 0 spl-query-result)) card-hash-table )
+          (push                    (cons (length anki-core-database-index) (nth 0 spl-query-result) ) anki-core-database-index)
+
           (puthash 'id              (nth 0 spl-query-result) card-hash-table )
           (puthash 'nid            (nth 1 spl-query-result) card-hash-table )
           (puthash 'did            (anki-core-decode-did (nth 2 spl-query-result) decks) card-hash-table)
@@ -235,7 +241,6 @@ Argument QUERY-RESULT is the query result generate by sqlite."
              do (progn
                   (puthash 'card-format (anki-core-format-card-hash-table card) card)
                   (puthash (gethash 'id card) card cards)))
-    (setq anki-core-database cards)
     cards)
 
   ;; (let ((cards (anki-core-parse-cards)) result)
@@ -253,7 +258,8 @@ Argument QUERY-RESULT is the query result generate by sqlite."
 (defun anki-core-format-card-hash-table (card)
   "Format CARD to one string which used in *anki-search*."
   (if (hash-table-p card)
-      (let* ((ord (gethash 'ord card))
+      (let* ((id (gethash 'id card))
+             (ord (gethash 'ord card))
              (sfld (gethash 'sfld card))
              (flds (gethash 'flds card))
              ;; (due (anki-core-decode-due card))
@@ -262,9 +268,10 @@ Argument QUERY-RESULT is the query result generate by sqlite."
              (mid (gethash 'mid card))
              (model-name (gethash "name" mid))
              (model-flds (gethash "flds" mid))
-             (template (anki-core-decode-tmpls ord mid)))
+             (template (anki-core-decode-tmpls ord mid))
+             (due-date (anki-learn-get-due-date id)))
         ;; (format "%s  %s" deck-name (replace-regexp-in-string "\037" "   " flds))
-        (format "%s  %s  %s" deck-name (car template) sfld))))
+        (format "%s  %s  %s  %s" deck-name (car template) sfld (or due-date "")))))
 
 (defun anki-core-decode-tmpls (cord mid)
   (let (result)
@@ -345,27 +352,31 @@ Argument QUERY-RESULT is the query result generate by sqlite."
       (goto-char (point-min))
       (set symbol (read (current-buffer))))))
 
-(defun anki-core-backup-database (&rest rest)
-  "TODO: Backup the anki database to a text file, except media files."
-  (interactive)
-  (let* ((date (format-time-string "%Y-%m-%d"))
-        (file (read-file-name "Save Anki Database to: " "~" (concat "Anki_Backup_" date ".txt") (pop rest))))
-    (anki-core-write (shell-quote-argument (expand-file-name file)) (anki-core-cards))))
+;; (defun anki-core-backup-database (&rest rest)
+;;   "TODO: Backup the anki database to a text file, except media files."
+;;   (interactive)
+;;   (let* ((date (format-time-string "%Y-%m-%d"))
+;;         (file (read-file-name "Save Anki Database to: " "~" (concat "Anki_Backup_" date ".txt") (pop rest))))
+;;     (anki-core-write (shell-quote-argument (expand-file-name file)) (anki-core-cards))))
 
-(defun anki-core-load-database ()
-  "TODO: Load the anki database which is genereated by `anki-core-backup'."
-  (interactive)
-  (let* ((file (read-file-name "Load Anki Database: " "~" )))
-    (anki-core-read (shell-quote-argument (expand-file-name file)) 'anki-core-database)
-    (setq anki-full-entries (hash-table-values anki-core-database))
-    (setq anki-search-entries (hash-table-values anki-core-database))))
+;; (defun anki-core-load-database ()
+;;   "TODO: Load the anki database which is genereated by `anki-core-backup'."
+;;   (interactive)
+;;   (let* ((file (read-file-name "Load Anki Database: " "~" )))
+;;     (anki-core-read (shell-quote-argument (expand-file-name file)) 'anki-core-database-index)
+;;     (setq anki-full-entries (hash-table-values anki-core-database-index))
+;;     (setq anki-search-entries (hash-table-values anki-core-database-index))))
 
-(defun anki-core-backup-learn-data (&rest rest)
+(defun anki-core-backup-learn-data ()
   "TODO: Backup the anki learn data to a text file."
-  (interactive))
+  (interactive)
+  (anki-core-write (expand-file-name (concat (file-name-as-directory anki-collection-dir) "learn.txt")) anki-core-database-review-logs))
 
-(defun anki-core-load-learn-data (&rest rest)
+(defun anki-core-load-learn-data ()
   "TODO: Load the anki learn data."
-  (interactive))
+  (interactive)
+  (let ((file (expand-file-name (concat (file-name-as-directory anki-collection-dir) "learn.txt"))))
+    (if (file-exists-p file)
+        (anki-core-read file 'anki-core-database-review-logs))))
 
 (provide 'anki-core)
