@@ -65,8 +65,15 @@ ON cards.nid = notes.id "
   :group 'anki
   :type 'string)
 
-(defcustom anki-collection-dir "~/Library/Application Support/Anki2/Default"
-  "SQL separator, used in parsing SQL result into list."
+(defcustom anki-collection-dir
+  (cond
+   ((eq system-type 'darwin)
+    "~/Library/Application Support/Anki2/User 1")
+   ((eq system-type 'gun/linux)
+    "~/.local/share/Anki2/User 1")
+   (t
+    "~/AppData/Roaming/Anki2/User 1"))
+  "Anki Collection Direcotry."
   :group 'anki
   :type 'string)
 
