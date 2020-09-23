@@ -1299,9 +1299,21 @@
 (defvar anki-test nil)
 (anki-core-read "~/anki-learn.txt" 'anki-test)
 
-(benchmark 1 '(anki-core-cards))
+(benchmark 1 '(anki-core-parse-cards))
+(profiler-start 'cpu)
+(profiler-stop)
+(anki-core-parse-cards)
+(profiler-report)
 
 (anki-learn-smart-reschedule 3)
 
 (anki-learn-get-due-data "1306463892572")
 (anki-learn-get-due-date "1306463892572")
+
+
+
+
+(let ((id (mapcar (lambda (x) (gethash 'id x)) anki-search-entries)))
+  (anki-core-sql `[:insert :into id :values([,id])]))
+
+(hash-table-keys anki-core-hash-table)

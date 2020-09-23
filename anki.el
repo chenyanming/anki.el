@@ -7,7 +7,7 @@
 ;; Keywords: tools
 ;; Created: 14 Sep 2020
 ;; Version: 0.2.0
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "25.1") (emacsql "3.0.0"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -106,6 +106,7 @@
   "Start to learn anki.
 Optional argument INDEX is the number of anki in the list."
   (interactive)
+  (anki-core-db)
   ;; Get All Cards
   (if anki-search-entries
       anki-search-entries

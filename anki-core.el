@@ -24,6 +24,8 @@
 (require 'shr)
 (require 'json)
 (require 'cl-lib)
+(require 'emacsql)
+(require 'emacsql-sqlite)
 
 (eval-when-compile (defvar sql-sqlite-program))
 
@@ -79,6 +81,79 @@ ON cards.nid = notes.id "
 
 (defvar anki-current-deck ""
   "Current deck.")
+
+(defvar anki-core-hash-table
+  (make-hash-table :test 'equal))
+
+(defconst anki-core-db-version 1)
+
+(defcustom anki-core-database-file
+  (expand-file-name "anki-database.sqlite"  anki-collection-dir)
+  "The file used to store the forge database."
+  :group 'anki
+  :type 'file)
+
+(defvar anki-core-db-connection nil
+  "The EmacSQL database connection.")
+
+(defun anki-core-db ()
+  "Connect or create database."
+  (unless (and anki-core-db-connection (emacsql-live-p anki-core-db-connection))
+    (setq anki-core-db-connection (emacsql-sqlite (expand-file-name "anki-database.sqlite"  anki-collection-dir)))
+
+    ;; create id table
+    (emacsql anki-core-db-connection [:create-table :if-not-exists id ([id])])
+
+    ;; create revlog table
+    (emacsql anki-core-db-connection [:create-table :if-not-exists revlog ([id log])])
+
+    ;; create version table
+    (emacsql anki-core-db-connection [:create-table :if-not-exists version ([user-version])])
+
+    (let* ((db anki-core-db-connection)
+           (version (anki-core-db-maybe-update db anki-core-db-version)))
+      (cond
+       ((> version anki-core-db-version)
+        (emacsql-close db)
+        (user-error
+         "The anki database was created with a newer Anki version.  %s"
+         "You need to update the Anki package."))
+       ((< version anki-core-db-version)
+        (emacsql-close db)
+        (error "BUG: The Anki database scheme changed %s"
+               "and there is no upgrade path")))))
+  anki-core-db-connection)
+
+(defun anki-core-db-maybe-update (db version)
+  (if (emacsql-live-p db)
+    (cond ((eq version 1)
+           (anki-core-db-set-version db (setq version 1))
+           (message "Anki database is version 1...done"))
+          ((eq version 2)
+           (message "Upgrading Anki database from version 2 to 3...")
+           (anki-core-db-set-version db (setq version 3))
+           (message "Upgrading Anki database from version 2 to 3...done"))
+          (t (setq version anki-core-db-version))))
+    version)
+
+(defun anki-core-db-get-version (db)
+  (caar (emacsql db [:select user-version :from version])))
+
+(defun anki-core-db-set-version (db dbv)
+  "Insert user-version if not exists."
+  (cl-assert (integerp dbv))
+  (if (anki-core-db-get-version db)
+      (emacsql db `[:update version :set  (= user-version ,dbv)])
+    (emacsql db `[:insert :into version :values ([(,@anki-core-db-version)])])))
+
+
+(defun anki-core-sql (sql &rest args)
+  (if (stringp sql)
+      (emacsql (anki-core-db) (apply #'format sql args))
+    (apply #'emacsql (anki-core-db) sql args)))
+
+
+
 
 (defvar anki-core-database-index '()
   "Anki core database index.")
@@ -144,7 +219,6 @@ Argument SQL-QUERY is the sqlite sql query string."
          (lines (if query-result (split-string query-result anki-sql-newline)))
          (decks (anki-core-parse-decks))
          (models (anki-core-parse-models)))
-    (setq anki-core-database-index '())
     (anki-core-load-learn-data)         ; load the learn data
     (cond ((equal "" query-result) '(""))
           (t
@@ -202,7 +276,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
     (if query-result
         (let ((spl-query-result (split-string query-result anki-sql-separator)))
           ;; (puthash 'id              (anki-decode-milliseconds (nth 0 spl-query-result)) card-hash-table )
-          (push                    (cons (length anki-core-database-index) (nth 0 spl-query-result) ) anki-core-database-index)
+          ;; (push                    (cons (length anki-core-database-index) (nth 0 spl-query-result) ) anki-core-database-index)
 
           (puthash 'id              (nth 0 spl-query-result) card-hash-table )
           (puthash 'nid            (nth 1 spl-query-result) card-hash-table )
@@ -245,9 +319,11 @@ Argument QUERY-RESULT is the query result generate by sqlite."
   (let ((cards (make-hash-table :test 'equal)))
     (cl-loop for card in (anki-core-parse-cards)
              if (hash-table-p card)
-             do (progn
+             do (let ((id (gethash 'id card)))
                   (puthash 'card-format (anki-core-format-card-hash-table card) card)
-                  (puthash (gethash 'id card) card cards)))
+                  (push id anki-core-database-index)
+                  (puthash id card cards)))
+    ;; (setq anki-core-hash-table cards)
     cards)
 
   ;; (let ((cards (anki-core-parse-cards)) result)
@@ -315,6 +391,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
 ;;;###autoload
 (defun anki-list-decks ()
   (interactive)
+  (anki-core-db)
   (let* ((deck (let* ((pdecks (anki-core-parse-decks))
                       (vdecks (hash-table-values pdecks)))
                  (cl-loop for deck in vdecks collect

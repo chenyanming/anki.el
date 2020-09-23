@@ -160,6 +160,7 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
 (defun anki-browser ()
   "Enter calibre Search Buffer."
   (interactive)
+  (anki-core-db)
   (let ((cand
          (if anki-search-entries
              anki-search-entries
