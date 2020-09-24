@@ -102,10 +102,10 @@ ON cards.nid = notes.id "
     (setq anki-core-db-connection (emacsql-sqlite (expand-file-name "anki-database.sqlite"  anki-collection-dir)))
 
     ;; create id table
-    (emacsql anki-core-db-connection [:create-table :if-not-exists id ([id])])
+    ;; (emacsql anki-core-db-connection [:create-table :if-not-exists id ([id])])
 
     ;; create revlog table
-    (emacsql anki-core-db-connection [:create-table :if-not-exists revlog ([id log])])
+    (emacsql anki-core-db-connection [:create-table :if-not-exists revlog ([id learn-data due-date])])
 
     ;; create version table
     (emacsql anki-core-db-connection [:create-table :if-not-exists version ([user-version])])
@@ -219,7 +219,7 @@ Argument SQL-QUERY is the sqlite sql query string."
          (lines (if query-result (split-string query-result anki-sql-newline)))
          (decks (anki-core-parse-decks))
          (models (anki-core-parse-models)))
-    (anki-core-load-learn-data)         ; load the learn data
+    ;; (anki-core-load-learn-data)         ; load the learn data
     (cond ((equal "" query-result) '(""))
           (t
            ;; (let (result)
@@ -451,16 +451,16 @@ Argument QUERY-RESULT is the query result generate by sqlite."
 ;;     (setq anki-full-entries (hash-table-values anki-core-database-index))
 ;;     (setq anki-search-entries (hash-table-values anki-core-database-index))))
 
-(defun anki-core-backup-learn-data ()
-  "TODO: Backup the anki learn data to a text file."
-  (interactive)
-  (anki-core-write (expand-file-name (concat (file-name-as-directory anki-collection-dir) "learn.txt")) anki-core-database-review-logs))
+;; (defun anki-core-backup-learn-data ()
+;;   "TODO: Backup the anki learn data to a text file."
+;;   (interactive)
+;;   (anki-core-write (expand-file-name (concat (file-name-as-directory anki-collection-dir) "learn.txt")) anki-core-database-review-logs))
 
-(defun anki-core-load-learn-data ()
-  "TODO: Load the anki learn data."
-  (interactive)
-  (let ((file (expand-file-name (concat (file-name-as-directory anki-collection-dir) "learn.txt"))))
-    (if (file-exists-p file)
-        (anki-core-read file 'anki-core-database-review-logs))))
+;; (defun anki-core-load-learn-data ()
+;;   "TODO: Load the anki learn data."
+;;   (interactive)
+;;   (let ((file (expand-file-name (concat (file-name-as-directory anki-collection-dir) "learn.txt"))))
+;;     (if (file-exists-p file)
+;;         (anki-core-read file 'anki-core-database-review-logs))))
 
 (provide 'anki-core)

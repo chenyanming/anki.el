@@ -129,20 +129,26 @@ this, you can do so here."
   (let* ((id (anki-find-card-id-at-point))
          (learn-index (anki-learn-get-card id))
          (learn-data (anki-learn-get-learn-data id))
-         closed-dates)
+         due-date)
     ;; next interval - learn data
     (setq learn-data
           (determine-next-interval (nth 1 learn-data)
                                    (nth 2 learn-data)
                                    quality
                                    (nth 3 learn-data)))
-    (let ((learn-entry (assoc id anki-core-database-review-logs)))
-      (if learn-entry
-          (setf (cdr learn-entry) learn-data) ; if entry exists, only set learn data
-        (push (cons id learn-data) anki-core-database-review-logs))) ; if entry miss, push entry + learn data
-    (anki-core-backup-learn-data)                                    ; backup learn data
-    (message (format-time-string "%Y-%m-%d %a %H:%M:%S" (time-add (current-time)
-                                                                  (days-to-time (nth 0 learn-data)))))))
+    ;; cal due date
+    (setq due-date (format-time-string "%Y-%m-%d %H:%M:%S" (time-add (current-time) (days-to-time (nth 0 learn-data)))))
+
+    ;; insert review log
+    (anki-core-sql `[:insert :into revlog :values([,id ,learn-data ,due-date])])
+
+    ;; (let ((learn-entry (assoc id anki-core-database-review-logs)))
+    ;;   (if learn-entry
+    ;;       (setf (cdr learn-entry) learn-data) ; if entry exists, only set learn data
+    ;;     (push (cons id learn-data) anki-core-database-review-logs))) ; if entry miss, push entry + learn data
+    ;; (anki-core-backup-learn-data)                                    ; backup learn data
+
+    (message due-date)))
 
 
 
@@ -242,24 +248,15 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
 
 
 (defun anki-learn-get-learn-data (id)
-  "TODO: Get due data based on card id."
-   (let ((due-data (cdr (assoc id anki-core-database-review-logs)) ) )
-     (if due-data
-         due-data
-       (copy-list initial-repetition-state))))
+  "TODO: Get learn data base on max due date of the ID."
+  (let ((due-data (nth 1 (car (anki-core-sql `[:select [id learn_data (funcall max due_date)] :from revlog :where id :like ,(concat "%%" id "%%")])))))
+    (if due-data
+        due-data
+      (copy-list initial-repetition-state))))
 
 (defun anki-learn-get-due-date (id)
-  "TODO: Get due date based on card id."
-  (let ((learn-data (anki-learn-get-learn-data id)))
-    (unless (equal learn-data initial-repetition-state) ; if new card no due date
-        (format-time-string "%Y-%m-%d %a %H:%M:%S"
-                            (time-add (current-time)
-                                      (days-to-time (nth 0 learn-data)))))
-
-    ;; (message (format-time-string "%Y-%m-%d %a %H:%M:%S"
-    ;;                              (time-add (current-time)
-    ;;                                        (days-to-time (nth 0 learn-data)))))
-    ))
+  "TODO: Get due date based on card ID."
+  (nth 2 (car (anki-core-sql `[:select [id learn_data (funcall max due_date)] :from revlog :where id :like ,(concat "%%" id "%%")]))))
 
 (provide 'anki-learn)
 
