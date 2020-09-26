@@ -55,8 +55,8 @@
     ;; (define-key map "t" #'anki-toggle-anki)
     (define-key map "r" #'anki-play-audio)
     (define-key map "l" #'anki-list-decks)
-    ;; (define-key map "0" #'anki-answer)
-    ;; (define-key map "1" #'anki-answer)
+    (define-key map "0" #'anki-answer)
+    (define-key map "1" #'anki-answer)
     (define-key map "2" #'anki-answer)
     (define-key map "3" #'anki-answer)
     (define-key map "4" #'anki-answer)
@@ -141,23 +141,39 @@ Optional argument INDEX is the number of anki in the list."
       ;;                             'face font-lock-warning-face
       ;;                             'mouse-face 'mode-line-highlight
       ;;                             'keymap answer-map) " " ))
+
       (insert (propertize (format "%s" "AGAIN")
                           'face '(:background "orange red" :height 1.5)
                           'mouse-face 'mode-line-highlight
                           'keymap answer-map))
-      (insert (propertize (format " %s " (nth 2 mock-due-date))
+      (insert (propertize (format " %s " (nth 0 mock-due-date))
                           'face 'bold))
+
+      ;; (insert (propertize (format "%s" "CHALLENGING")
+      ;;                     'face '(:background "orange red" :height 1.5)
+      ;;                     'mouse-face 'mode-line-highlight
+      ;;                     'keymap answer-map))
+      ;; (insert (propertize (format " %s " (nth 1 mock-due-date))
+      ;;                     'face 'bold))
+
+      ;; (insert (propertize (format "%s" "DIFFICULT")
+      ;;                     'face '(:background "orange red" :height 1.5)
+      ;;                     'mouse-face 'mode-line-highlight
+      ;;                     'keymap answer-map))
+      ;; (insert (propertize (format " %s " (nth 1 mock-due-date))
+      ;;                     'face 'bold))
+
       (insert (propertize (format "%s"  "HARD")
                           'face '(:background "grey"  :height 1.5)
                           'mouse-face 'mode-line-highlight
                           'keymap answer-map))
-      (insert (propertize (format " %s " (nth 3 mock-due-date))
+      (insert (propertize (format " %s " (nth 1 mock-due-date))
                           'face 'bold))
       (insert (propertize (format "%s"  "GOOD")
                           'face '(:background "green"  :height 1.5)
                           'mouse-face 'mode-line-highlight
                           'keymap answer-map))
-      (insert (propertize (format " %s " (nth 4 mock-due-date))
+      (insert (propertize (format " %s " (nth 3 mock-due-date))
                           'face 'bold))
       (insert (propertize (format "%s"  "EASY")
                           'face '(:background "light sky blue" :height 1.5)
@@ -259,10 +275,13 @@ Argument EVENT mouse event."
     (with-current-buffer (window-buffer window)
       (goto-char pos)
       (anki-learn-smart-reschedule (let ((level (word-at-point t)))
-                                     (cond ((equal level "AGAIN") 2)
-                                           ((equal level "HARD") 3)
-                                           ((equal level "GOOD") 4)
-                                           ((equal level "EASY") 5))))
+                                     (cond
+                                      ((equal level "AGAIN") 0)
+                                      ;; ((equal level "CHALLENGING") 1)
+                                      ;; ((equal level "DIFFICULT") 1)
+                                      ((equal level "HARD") 1)
+                                      ((equal level "GOOD") 3)
+                                      ((equal level "EASY") 5))))
       (anki))))
 
 (defun anki-show-answer-mouse-1 (event)

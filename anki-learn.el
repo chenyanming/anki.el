@@ -50,6 +50,43 @@ this, you can do so here."
   :group 'anki
   :type 'float)
 
+(defcustom anki-learn-sm2-steps
+  10
+  "Steps in Minutes, it is a added parameter which is not caculated in SM2.
+Used in Quality = 1."
+  :group 'anki
+  :type 'float)
+
+(defcustom anki-learn-sm2-more-steps
+  30
+  "More Steps in Minutes, it is a added parameter which is not caculated in SM2.
+Used in Quality = 2"
+  :group 'anki
+  :type 'float)
+
+(defcustom anki-learn-sm2-graduating-interval
+  1
+  "Graduating interval in days, it is a added parameter which is not caculated in SM2.
+Used in Quality = 3.
+It determines the SM2 the first and second interval."
+  :group 'anki
+  :type 'float)
+
+(defcustom anki-learn-sm2-easy-interval
+  2
+  "Easy interval in days, it is a added parameter which is not caculated in SM2.
+Used in Quality = 4.
+It determines the SM2 the first and second interval."
+  :group 'anki
+  :type 'float)
+
+(defcustom anki-learn-sm2-more-easy-interval
+  4
+  "More Easy interval in days, it is a added parameter which is not caculated in SM2.
+Used in Quality = 5.
+It determines the SM2 the first and second interval."
+  :group 'anki
+  :type 'float)
 
 (defun initial-optimal-factor (n ef)
   (if (= 1 n)
@@ -188,12 +225,16 @@ Example: (round-float 3.56755765 3) -> 3.568"
                                                    quality
                                                    nil) )
              collect (format "%s" (let ((days (nth 0 next-learn-data)))
-                                         (cond ((< days 0) "<1 min")
-                                               ((= days 1) "1 d")
-                                               ((= days 6) "6 d")
-                                               ((= days 365) "1 yr")
-                                               ((> days 365) (format "%0.1f yr" (/ days 365)))
-                                               (t (format "%0.1f d" days))))))))
+                                    (cond ((< days 0) "<1 min") ; -1
+                                          ((< days 0.01) "<10 mins")
+                                          ((< days 0.03) "<30 mins")
+                                          ((= days anki-learn-sm2-graduating-interval) (format "%s d" anki-learn-sm2-graduating-interval))
+                                          ((= days anki-learn-sm2-easy-interval) (format "%s d" anki-learn-sm2-easy-interval))
+                                          ((= days anki-learn-sm2-more-easy-interval) (format "%s d" anki-learn-sm2-more-easy-interval))
+                                          ((and (> days 90) (< days 365)) (format "%0.1f mo" (/ days 30)))
+                                          ((= days 365) "1 yr")
+                                          ((> days 365) (format "%0.1f yr" (/ days 365)))
+                                          (t (format "%d d" days))))))))
 
 ;;; SM2 Algorithm =============================================================
 
@@ -294,7 +335,10 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
       ;; repetitions for the item from the beginning without changing the
       ;; E-Factor (i.e. use intervals I(1), I(2) etc. as if the item was
       ;; memorized anew).
-      (list -1 1 ef of-matrix)
+      ;; (list -1 1 ef of-matrix) ; original algothrim is all set to new
+      (cond ((= quality 0) (list -1 1 ef of-matrix)) ; set to new
+            ((= quality 1) (list (/ anki-learn-sm2-steps (* 24 60.0)) 1 ef of-matrix)) ; set to 10 minutes
+            ((= quality 2) (list (/ anki-learn-sm2-more-steps (* 24 60.0)) 1 ef of-matrix)))  ; set to 30 minutes
     (let* ((next-ef (modify-e-factor ef quality))
            ;;3. Repeat items using the following intervals:
            ;; I(1):=1
@@ -305,7 +349,10 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
            ;; EF - E-Factor of a given item
            (interval
             (cond
-             ((<= n 1) 1)
+             ((<= n 1) (cond
+                        ((= quality 3) anki-learn-sm2-graduating-interval)
+                        ((= quality 4) anki-learn-sm2-easy-interval)
+                        ((= quality 5) anki-learn-sm2-more-easy-interval)))
              ((= n 2)
               (cond
                (anki-learn-add-random-noise-to-intervals-p
@@ -315,7 +362,10 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
                   (3 3)
                   (2 1)
                   (t -1)))
-               (t 6)))
+               (t (cond
+                   ((= quality 3) (* 2 anki-learn-sm2-graduating-interval))
+                   ((= quality 4) (* 2 anki-learn-sm2-easy-interval))
+                   ((= quality 5) (* 2 anki-learn-sm2-more-easy-interval))))))
              (t (* last-interval next-ef)))))
       (list (if anki-learn-add-random-noise-to-intervals-p
                 (+ last-interval (* (- interval last-interval)
