@@ -188,6 +188,7 @@ Example: (round-float 3.56755765 3) -> 3.568"
   "Schedule the next learn data based on QUALITY."
   (interactive "nHow well did you remember the information (on a scale of 0-5)? ")
   (let* ((id (anki-find-card-id-at-point))
+         (did (anki-find-card-deck-id-at-point))
          (learn-data (anki-learn-get-learn-data id))
          due-date)
     ;; next interval - learn data
@@ -201,7 +202,7 @@ Example: (round-float 3.56755765 3) -> 3.568"
     (setq due-date (format-time-string "%Y-%m-%d %H:%M:%S" (time-add (current-time) (days-to-time (nth 0 learn-data)))))
 
     ;; insert review log
-    (anki-core-sql `[:insert :into revlog :values([,id ,learn-data ,due-date])])
+    (anki-core-sql `[:insert :into revlog :values([,id ,did ,learn-data ,due-date])])
 
     ;; (let ((learn-entry (assoc id anki-core-database-review-logs)))
     ;;   (if learn-entry
@@ -381,13 +382,19 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
     (if (hash-table-p card)
         (gethash 'id card))))
 
+(defun anki-find-card-deck-id-at-point ()
+  "TODO: "
+  (let ((card (anki-find-card-at-point)))
+    (if (hash-table-p card)
+        (gethash "id" (gethash 'did card) ))))
+
 (defun anki-learn-get-card (id)
   "TODO: Get card based on card id."
   (rassoc id anki-core-database-index))
 
 (defun anki-learn-get-learn-data (id)
   "TODO: Get learn data base on max due date of the ID."
-  (let ((due-data (nth 2 (car (anki-core-sql `[:select [ROWID *] :from revlog :where id :like ,(concat "%%" id "%%") :order-by ROWID :desc :limit 1])))))
+  (let ((due-data (nth 3 (car (anki-core-sql `[:select [ROWID *] :from revlog :where id :like ,(concat "%%" id "%%") :order-by ROWID :desc :limit 1])))))
     (if due-data
         due-data
       (copy-list initial-repetition-state))))

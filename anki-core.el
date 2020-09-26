@@ -105,7 +105,7 @@ ON cards.nid = notes.id "
     ;; (emacsql anki-core-db-connection [:create-table :if-not-exists id ([id])])
 
     ;; create revlog table
-    (emacsql anki-core-db-connection [:create-table :if-not-exists revlog ([id learn-data due-date])])
+    (emacsql anki-core-db-connection [:create-table :if-not-exists revlog ([id did learn-data due-date])])
 
     ;; create version table
     (emacsql anki-core-db-connection [:create-table :if-not-exists version ([user-version])])
