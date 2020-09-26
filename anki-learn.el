@@ -27,6 +27,9 @@
 
 (defvar initial-repetition-state '(-1 1 2.5 nil))
 
+(defvar anki-learn-spaced-repetition-algorithm-function #'anki-learn-determine-next-interval-sm2)
+
+
 (defcustom anki-learn-always-reschedule t
   "If non-nil, always reschedule items, even if retention was \"perfect\"."
   :type 'boolean
@@ -40,7 +43,7 @@ the changes of the OF matrix)."
   :group 'anki)
 
 (defcustom anki-learn-sm5-initial-interval
-  0.1
+  4
   "In the SM5 algorithm, the initial interval after the first
 successful presentation of an item is always 4 days. If you wish to change
 this, you can do so here."
@@ -70,11 +73,11 @@ this, you can do so here."
       (push (cons n (list (cons ef of))) of-matrix)))
   of-matrix)
 
-(defun inter-repetition-interval (n ef &optional of-matrix)
+(defun inter-repetition-interval (last-interval n ef &optional of-matrix)
   (let ((of (get-optimal-factor n ef of-matrix)))
     (if (= 1 n)
         of
-      (* of (inter-repetition-interval (1- n) ef of-matrix)))))
+      (* of last-interval))))
 
 (defun modify-e-factor (ef quality)
   "EF: Efactor, QUALITY: 0-5.
@@ -93,24 +96,37 @@ If EF is less than 1.3 then let EF be 1.3."
   (let ((temp (* of (+ 0.72 (* q 0.07)))))
     (+ (* (- 1 fraction) of) (* fraction temp))))
 
+(defun anki-learn-round-float (floatnum fix)
+  "Round the floating point number FLOATNUM to FIX decimal places.
+Example: (round-float 3.56755765 3) -> 3.568"
+  (let ((n (expt 10 fix)))
+    (/ (float (round (* floatnum n))) n)))
 
-(defun determine-next-interval (n ef quality of-matrix)
-  (assert (> n 0))
-  (assert (and (>= quality 0) (<= quality 5)))
-  (if (< quality 3)
-      (list (inter-repetition-interval n ef) (1+ n) ef nil)
-    (let ((next-ef (modify-e-factor ef quality)))
-      (setq of-matrix
-            (set-optimal-factor n next-ef of-matrix
-                                (modify-of (get-optimal-factor n ef of-matrix)
-                                           quality anki-learn-fraction))
-            ef next-ef)
-      ;; For a zero-based quality of 4 or 5, don't repeat
-      (if (and (>= quality 4)
-               (not anki-learn-always-reschedule))
-          (list 0 (1+ n) ef of-matrix)
-        (list (inter-repetition-interval n ef of-matrix) (1+ n)
-              ef of-matrix)))))
+(defun anki-learn-determine-next-interval-sm5 (last-interval n ef quality of-matrix)
+  "Return next interval."
+  (if (zerop n) (setq n 1))
+  (if (null ef) (setq ef 2.5))
+  (cl-assert (> n 0))
+  (cl-assert (and (>= quality 0) (<= quality 5)))
+  (setq of-matrix (copy-tree of-matrix))
+  (let ((next-ef (modify-e-factor ef quality))
+        (old-ef ef)
+        (new-of (modify-of (get-optimal-factor n ef of-matrix)
+                           quality anki-learn-fraction)))
+    (setq of-matrix
+          (set-optimal-factor n next-ef of-matrix
+                              (anki-learn-round-float new-of 3))) ; round OF to 3 d.p.
+    (setq ef next-ef)
+    ;; For a zero-based quality of 4 or 5, don't repeat
+    (cond
+     ((<= quality anki-learn-failure-quality)
+      (list -1 1 old-ef of-matrix)) ; Not clear if OF matrix is supposed to be
+                                        ; preserved
+     (t
+      (list (inter-repetition-interval last-interval n ef of-matrix)
+            (1+ n)
+            ef
+            of-matrix)))))
 
 
 ;; (defun org-smart-reschedule (quality)
@@ -132,15 +148,14 @@ If EF is less than 1.3 then let EF be 1.3."
 ;; 				  (days-to-time (nth 0 learn-data)))))))
 
 (defun anki-learn-smart-reschedule (quality)
-  "TODO: "
+  "Schedule the next learn data based on QUALITY."
   (interactive "nHow well did you remember the information (on a scale of 0-5)? ")
   (let* ((id (anki-find-card-id-at-point))
-         (learn-index (anki-learn-get-card id))
          (learn-data (anki-learn-get-learn-data id))
          due-date)
     ;; next interval - learn data
     (setq learn-data
-          (determine-next-interval-sm2 (nth 0 learn-data)
+          (funcall anki-learn-spaced-repetition-algorithm-function (nth 0 learn-data)
                                        (nth 1 learn-data)
                                        (nth 2 learn-data)
                                        quality
@@ -167,7 +182,7 @@ If EF is less than 1.3 then let EF be 1.3."
     ;; next interval - learn data
     (cl-loop for quality in '(0 1 2 3 4 5)
              if (setq next-learn-data
-                      (determine-next-interval-sm2 (nth 0 learn-data)
+                      (funcall anki-learn-spaced-repetition-algorithm-function (nth 0 learn-data)
                                                    (nth 1 learn-data)
                                                    (nth 2 learn-data)
                                                    quality
@@ -250,7 +265,7 @@ http://www.supermemo.com/english/ol/sm5.htm for details."
                    (sign p)))
          100.0))))
 
-(defun determine-next-interval-sm2 (last-interval n ef quality of-matrix)
+(defun anki-learn-determine-next-interval-sm2 (last-interval n ef quality of-matrix)
   "TODO: Arguments:
 - LAST-INTERVAL -- the number of days since the item was last reviewed.
 - REPEATS -- the number of times the item has been successfully reviewed
