@@ -132,7 +132,11 @@ Optional argument INDEX is the number of anki in the list."
          beg end)
     (setq anki-number number)
 
-    (message "Card id: %s, Due: %s" id (if due-date due-date "NEW CARD"))
+    (message "Card id: %s, Due: %s, Diff: %0.2f minutes"
+             id
+             (if due-date due-date "NEW CARD")
+             (if due-date (/ (- (time-convert (encode-time (parse-time-string due-date) ) 'integer)
+                             (time-convert (current-time) 'integer )) 60.0 )))
     ;; insert answer button
     (let ((answer-map (make-sparse-keymap)))
       (define-key answer-map [mouse-1] 'anki-answer-mouse-1)
