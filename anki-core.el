@@ -82,6 +82,9 @@ ON cards.nid = notes.id "
 (defvar anki-current-deck ""
   "Current deck.")
 
+(defvar anki-current-deck-id ""
+  "Current deck id.")
+
 (defvar anki-core-hash-table
   (make-hash-table :test 'equal))
 
@@ -105,7 +108,7 @@ ON cards.nid = notes.id "
     ;; (emacsql anki-core-db-connection [:create-table :if-not-exists id ([id])])
 
     ;; create revlog table
-    (emacsql anki-core-db-connection [:create-table :if-not-exists revlog ([id did learn-data due-date])])
+    (emacsql anki-core-db-connection [:create-table :if-not-exists revlog ([id did learn-data due-days due-date])])
 
     ;; create version table
     (emacsql anki-core-db-connection [:create-table :if-not-exists version ([user-version])])
@@ -323,7 +326,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
                   (puthash 'card-format (anki-core-format-card-hash-table card) card)
                   (push id anki-core-database-index)
                   (puthash id card cards)))
-    ;; (setq anki-core-hash-table cards)
+    (setq anki-core-hash-table cards)
     cards)
 
   ;; (let ((cards (anki-core-parse-cards)) result)
@@ -397,7 +400,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
                  (cl-loop for deck in vdecks collect
                           (cons (gethash "name" deck) (gethash "id" deck)))))
          (deck-name (setq anki-current-deck (completing-read "Decks: " deck)))
-         (selected-did (cdr (assoc deck-name deck))))
+         (selected-did (setq anki-current-deck-id (cdr (assoc deck-name deck)) )))
     ;; Get all cards
     (if anki-search-entries
         anki-search-entries
@@ -435,6 +438,29 @@ Argument QUERY-RESULT is the query result generate by sqlite."
       (insert-file-contents file)
       (goto-char (point-min))
       (set symbol (read (current-buffer))))))
+
+(defun anki-learn-get-latest-due-card-or-random-card ()
+  "Get latest due card or a random card if no review logs."
+  (let* ((result (car (anki-core-sql `[:select [id did (funcall min due_days) due_date]
+                                     :from [:select *
+                                            :from [:select :distinct [id did due_days due_date] :from revlog :where (= did ,anki-current-deck-id) :order-by ROWID :asc]
+                                            :group-by id]])))
+        (id (nth 0 result))
+        ;; (due-days (nth 1 result))
+        (due-date (if id (encode-time (parse-time-string (nth 3 result))))))
+    (if (and id (time-less-p due-date (current-time))) ; the lastest card due-date is less than current date
+        (gethash id anki-core-hash-table)
+      (nth (random (1- (length anki-search-entries))) anki-search-entries))))
+
+
+;; (time-less-p  (encode-time (parse-time-string (nth 2 (car (anki-core-sql [:select [id, (funcall min due_days), due_date]
+;;                      :from [:select *
+;;                             :from [:select :distinct [id due_days due_date] :from revlog :order-by ROWID :asc]
+;;                             :group-by id]])) ) ) ) (current-time)  )
+
+;; SELECT id, MIN(due_days), due_date FROM (SELECT * FROM (SELECT DISTINCT id, due_days, due_date from revlog ORDER BY ROWID DESC) GROUP BY id)
+;; SELECT id, did, MIN(due_days), due_date FROM
+;; (SELECT * FROM (SELECT DISTINCT id, did, due_days, due_date from revlog WHERE did = 1549898228880 ORDER BY ROWID DESC) GROUP BY id )
 
 ;; (defun anki-core-backup-database (&rest rest)
 ;;   "TODO: Backup the anki database to a text file, except media files."

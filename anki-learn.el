@@ -190,19 +190,24 @@ Example: (round-float 3.56755765 3) -> 3.568"
   (let* ((id (anki-find-card-id-at-point))
          (did (anki-find-card-deck-id-at-point))
          (learn-data (anki-learn-get-learn-data id))
+         due-days
          due-date)
     ;; next interval - learn data
     (setq learn-data
           (funcall anki-learn-spaced-repetition-algorithm-function (nth 0 learn-data)
-                                       (nth 1 learn-data)
-                                       (nth 2 learn-data)
-                                       quality
-                                       nil))
+                   (nth 1 learn-data)
+                   (nth 2 learn-data)
+                   quality
+                   nil))
+    ;; due days
+    (setq due-days (nth 0 learn-data))
+
     ;; cal due date
-    (setq due-date (format-time-string "%Y-%m-%d %H:%M:%S" (time-add (current-time) (days-to-time (nth 0 learn-data)))))
+    (setq due-date (format-time-string "%Y-%m-%d %H:%M:%S" (time-add (current-time) (days-to-time due-days))))
+
 
     ;; insert review log
-    (anki-core-sql `[:insert :into revlog :values([,id ,did ,learn-data ,due-date])])
+    (anki-core-sql `[:insert :into revlog :values([,id ,did ,learn-data ,due-days ,due-date])])
 
     ;; (let ((learn-entry (assoc id anki-core-database-review-logs)))
     ;;   (if learn-entry
@@ -210,10 +215,11 @@ Example: (round-float 3.56755765 3) -> 3.568"
     ;;     (push (cons id learn-data) anki-core-database-review-logs))) ; if entry miss, push entry + learn data
     ;; (anki-core-backup-learn-data)                                    ; backup learn data
 
-    (message due-date)))
+    ;; (message due-date)
+    ))
 
 (defun anki-learn-mock-smart-reschedule (&optional id)
-  "TODO: Get mock due date for all quality based on ID."
+  "TODO: Get mock due dates for all quality based on ID."
   (let* ((id (or id (anki-find-card-id-at-point)))
          (learn-data (anki-learn-get-learn-data id))
          next-learn-data)
@@ -226,7 +232,7 @@ Example: (round-float 3.56755765 3) -> 3.568"
                                                    quality
                                                    nil) )
              collect (format "%s" (let ((days (nth 0 next-learn-data)))
-                                    (cond ((< days 0) "<1 min") ; -1
+                                    (cond ((< days 0.001) "<1 min") ; -1
                                           ((< days 0.01) "<10 mins")
                                           ((< days 0.03) "<30 mins")
                                           ((= days anki-learn-sm2-graduating-interval) (format "%s d" anki-learn-sm2-graduating-interval))
@@ -337,7 +343,7 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
       ;; E-Factor (i.e. use intervals I(1), I(2) etc. as if the item was
       ;; memorized anew).
       ;; (list -1 1 ef of-matrix) ; original algothrim is all set to new
-      (cond ((= quality 0) (list -1 1 ef of-matrix)) ; set to new
+      (cond ((= quality 0) (list (/ 1 (* 24 60.0)) 1 ef of-matrix)) ; set to 1 minute
             ((= quality 1) (list (/ anki-learn-sm2-steps (* 24 60.0)) 1 ef of-matrix)) ; set to 10 minutes
             ((= quality 2) (list (/ anki-learn-sm2-more-steps (* 24 60.0)) 1 ef of-matrix)))  ; set to 30 minutes
     (let* ((next-ef (modify-e-factor ef quality))
@@ -401,7 +407,7 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
 
 (defun anki-learn-get-due-date (id)
   "TODO: Get due date based on card ID."
-  (nth 3 (car (anki-core-sql `[:select [ROWID *] :from revlog :where id :like ,(concat "%%" id "%%") :order-by ROWID :desc :limit 1]))))
+  (nth 5 (car (anki-core-sql `[:select [ROWID *] :from revlog :where id :like ,(concat "%%" id "%%") :order-by ROWID :desc :limit 1]))))
 
 (provide 'anki-learn)
 

@@ -117,12 +117,14 @@ Optional argument INDEX is the number of anki in the list."
   (setq buffer-read-only nil)
   (erase-buffer)
   (setq anki-last-number anki-number)
-  (let* ((item (or (nth (or index anki-number) anki-search-entries)
-                   (nth (setq anki-number 0) anki-search-entries)))
+  (let* ((item (anki-learn-get-latest-due-card-or-random-card))
+         ;; (item (or (nth (or index anki-number) anki-search-entries)
+         ;;           (nth (setq anki-number 0) anki-search-entries)))
          (id (gethash 'id item))
          (card (anki-get-card item))
          (question (nth 0 card))
          (answer (nth 1 card))
+         (due-date (anki-learn-get-due-date id))
          (mock-due-date (anki-learn-mock-smart-reschedule id))
          (number (or index (if anki-in-sequence
                                anki-number
@@ -130,6 +132,7 @@ Optional argument INDEX is the number of anki in the list."
          beg end)
     (setq anki-number number)
 
+    (message "Card id: %s, Due: %s" id (if due-date due-date "NEW CARD"))
     ;; insert answer button
     (let ((answer-map (make-sparse-keymap)))
       (define-key answer-map [mouse-1] 'anki-answer-mouse-1)
