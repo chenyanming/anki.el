@@ -169,6 +169,14 @@ Optional argument INDEX is the number of anki in the list."
     ;;                             'face font-lock-keyword-face
     ;;                             'mouse-face 'mode-line-highlight) "\n"))
 
+    (insert "\n\n")
+    ;; insert show answer button
+    (let ((show-answer-map (make-sparse-keymap)))
+      (define-key show-answer-map [mouse-1] 'anki-show-answer-mouse-1)
+      (insert (concat (propertize "SHOW ANSWER"
+                                  'face '(:background "grey" :height 1.5)
+                                  'mouse-face 'mode-line-highlight
+                                  'keymap show-answer-map) " " )))
 
     (setq beg (point))
     (insert "<h1>Answer</h1>")
@@ -248,5 +256,16 @@ Argument EVENT mouse event."
                                            ((equal level "EASY") 5))))
       (anki))))
 
+(defun anki-show-answer-mouse-1 (event)
+  "TODO: Visit the location click on.
+Argument EVENT mouse event."
+  (interactive "e")
+  (let ((window (posn-window (event-end event)))
+        (pos (posn-point (event-end event))))
+    (if (not (windowp window))
+        (error "No tag chosen"))
+    (with-current-buffer (window-buffer window)
+      (goto-char pos)
+      (message "ANSWER BUTTON IS IN TODO LIST."))))
 
 (provide 'anki)
