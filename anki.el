@@ -136,7 +136,7 @@ Optional argument INDEX is the number of anki in the list."
              id
              (if due-date due-date "NEW CARD")
              (if due-date (/ (- (time-convert (encode-time (parse-time-string due-date) ) 'integer)
-                             (time-convert (current-time) 'integer )) 60.0 )))
+                             (time-convert (current-time) 'integer )) 60.0 ) 0))
     ;; insert answer button
     (let ((answer-map (make-sparse-keymap)))
       (define-key answer-map [mouse-1] 'anki-answer-mouse-1)
