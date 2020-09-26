@@ -77,6 +77,14 @@ this, you can do so here."
       (* of (inter-repetition-interval (1- n) ef of-matrix)))))
 
 (defun modify-e-factor (ef quality)
+  "EF: Efactor, QUALITY: 0-5.
+5. After each repetition modify the E-Factor of the recently repeated item according to the formula:
+EF':=EF+(0.1-(5-q)*(0.08+(5-q)*0.02))
+where:
+EF' - new value of the E-Factor,
+EF - old value of the E-Factor,
+q - quality of the response in the 0-5 grade scale.
+If EF is less than 1.3 then let EF be 1.3."
   (if (< ef 1.3)
       1.3
     (+ ef (- 0.1 (* (- 5 quality) (+ 0.08 (* (- 5 quality) 0.02)))))))
@@ -132,10 +140,11 @@ this, you can do so here."
          due-date)
     ;; next interval - learn data
     (setq learn-data
-          (determine-next-interval (nth 1 learn-data)
-                                   (nth 2 learn-data)
-                                   quality
-                                   (nth 3 learn-data)))
+          (determine-next-interval-sm2 (nth 0 learn-data)
+                                       (nth 1 learn-data)
+                                       (nth 2 learn-data)
+                                       quality
+                                       nil))
     ;; cal due date
     (setq due-date (format-time-string "%Y-%m-%d %H:%M:%S" (time-add (current-time) (days-to-time (nth 0 learn-data)))))
 
@@ -164,7 +173,7 @@ small, but scales up with the interval."
   :type 'boolean)
 
 (defcustom anki-learn-failure-quality
-  1
+  2
   "Lower bound for an recall to be marked as failure.
 
 If the quality of recall for an item is this number or lower,
@@ -198,12 +207,19 @@ http://www.supermemo.com/english/ol/sm5.htm for details."
                    (sign p)))
          100.0))))
 
-(defun determine-next-interval-sm2 (n ef quality of-matrix)
+(defun determine-next-interval-sm2 (last-interval n ef quality of-matrix)
   "TODO: Arguments:
 - LAST-INTERVAL -- the number of days since the item was last reviewed.
 - REPEATS -- the number of times the item has been successfully reviewed
 - EF -- the 'easiness factor'
 - QUALITY -- 0 to 5
+4. After each repetition assess the quality of repetition response in 0-5 grade scale:
+5 - perfect response
+4 - correct response after a hesitation
+3 - correct response recalled with serious difficulty
+2 - incorrect response; where the correct one seemed easy to recall
+1 - incorrect response; the correct one remembered
+0 - complete blackout.
 
 Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), where:
 - INTERVAL is the number of days until the item should next be reviewed
@@ -211,30 +227,33 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
 - EF is modified based on the recall quality for the item.
 - OF-MATRIX is not modified."
   (if (zerop n) (setq n 1))
-  (if (null ef) (setq ef 2.5))
+  ;; 2. With all items associate an E-Factor equal to 2.5.
+  (if (not ef) (setq ef 2.5))
   (cl-assert (> n 0))
   (cl-assert (and (>= quality 0) (<= quality 5)))
   (if (<= quality anki-learn-failure-quality)
-      ;; When an item is failed, its interval is reset to 0,
-      ;; but its EF is unchanged
+      ;; 6. If the quality response was lower than 3 then start
+      ;; repetitions for the item from the beginning without changing the
+      ;; E-Factor (i.e. use intervals I(1), I(2) etc. as if the item was
+      ;; memorized anew).
       (list -1 1 ef of-matrix)
-    ;; else:
     (let* ((next-ef (modify-e-factor ef quality))
+           ;;3. Repeat items using the following intervals:
+           ;; I(1):=1
+           ;; I(2):=6
+           ;; for n>2: I(n):=I(n-1)*EF
+           ;; where:
+           ;; I(n) - inter-repetition interval after the n-th repetition (in days),
+           ;; EF - E-Factor of a given item
            (interval
             (cond
              ((<= n 1) 1)
              ((= n 2) 6)
-             (t next-ef))))
+             (t (* last-interval next-ef)))))
       (list interval
             (1+ n)
             next-ef
             of-matrix))))
-
-
-
-
-
-
 
 (defun anki-find-card-id-at-point ()
   "TODO: "
@@ -246,17 +265,16 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
   "TODO: Get card based on card id."
   (rassoc id anki-core-database-index))
 
-
 (defun anki-learn-get-learn-data (id)
   "TODO: Get learn data base on max due date of the ID."
-  (let ((due-data (nth 1 (car (anki-core-sql `[:select [id learn_data (funcall max due_date)] :from revlog :where id :like ,(concat "%%" id "%%")])))))
+  (let ((due-data (nth 2 (car (anki-core-sql `[:select [ROWID *] :from revlog :where id :like ,(concat "%%" id "%%") :order-by ROWID :desc :limit 1])))))
     (if due-data
         due-data
       (copy-list initial-repetition-state))))
 
 (defun anki-learn-get-due-date (id)
   "TODO: Get due date based on card ID."
-  (nth 2 (car (anki-core-sql `[:select [id learn_data (funcall max due_date)] :from revlog :where id :like ,(concat "%%" id "%%")]))))
+  (nth 3 (car (anki-core-sql `[:select [ROWID *] :from revlog :where id :like ,(concat "%%" id "%%") :order-by ROWID :desc :limit 1]))))
 
 (provide 'anki-learn)
 

@@ -55,8 +55,8 @@
     ;; (define-key map "t" #'anki-toggle-anki)
     (define-key map "r" #'anki-play-audio)
     (define-key map "l" #'anki-list-decks)
-    (define-key map "0" #'anki-answer)
-    (define-key map "1" #'anki-answer)
+    ;; (define-key map "0" #'anki-answer)
+    ;; (define-key map "1" #'anki-answer)
     (define-key map "2" #'anki-answer)
     (define-key map "3" #'anki-answer)
     (define-key map "4" #'anki-answer)
@@ -129,6 +129,33 @@ Optional argument INDEX is the number of anki in the list."
          beg end)
     (setq anki-number number)
 
+    ;; insert answer button
+    (let ((answer-map (make-sparse-keymap)))
+      (define-key answer-map [mouse-1] 'anki-answer-mouse-1)
+      ;; (insert (concat (propertize "CHALLENGING"
+      ;;                             'face font-lock-warning-face
+      ;;                             'mouse-face 'mode-line-highlight
+      ;;                             'keymap answer-map) " " ))
+      ;; (insert (concat (propertize "DIFFICULT"
+      ;;                             'face font-lock-warning-face
+      ;;                             'mouse-face 'mode-line-highlight
+      ;;                             'keymap answer-map) " " ))
+      (insert (concat (propertize "AGAIN"
+                                  'face '(:background "orange red" :height 1.5)
+                                  'mouse-face 'mode-line-highlight
+                                  'keymap answer-map) " " ))
+      (insert (concat (propertize "HARD"
+                                  'face '(:background "grey"  :height 1.5)
+                                  'mouse-face 'mode-line-highlight
+                                  'keymap answer-map) " " ))
+      (insert (concat (propertize "GOOD"
+                                  'face '(:background "green"  :height 1.5)
+                                  'mouse-face 'mode-line-highlight
+                                  'keymap answer-map) " " ))
+      (insert (concat (propertize "EASY"
+                                  'face '(:background "light sky blue" :height 1.5)
+                                  'mouse-face 'mode-line-highlight
+                                  'keymap answer-map) " " )))
 
     (setq beg (point))
     (insert "<h1>Question</h1>")
@@ -138,18 +165,10 @@ Optional argument INDEX is the number of anki in the list."
     (anki-render-region beg end)
 
     ;; insert due date
-    (insert (concat "\n" (propertize (or (anki-learn-get-due-date id) "New Card")
-                                'face font-lock-keyword-face
-                                'mouse-face 'mode-line-highlight) "\n"))
+    ;; (insert (concat "\n" (propertize (or (anki-learn-get-due-date id) "New Card")
+    ;;                             'face font-lock-keyword-face
+    ;;                             'mouse-face 'mode-line-highlight) "\n"))
 
-    ;; insert answer button
-    (let ((answer-map (make-sparse-keymap)))
-      (define-key answer-map [mouse-1] 'anki-answer-mouse-1)
-      (dolist (i '(0 1 2 3 4 5))
-        (insert (concat (propertize (format "%s" i)
-                            'face font-lock-warning-face
-                            'mouse-face 'mode-line-highlight
-                            'keymap answer-map) " " ))))
 
     (setq beg (point))
     (insert "<h1>Answer</h1>")
@@ -222,7 +241,11 @@ Argument EVENT mouse event."
         (error "No tag chosen"))
     (with-current-buffer (window-buffer window)
       (goto-char pos)
-      (anki-learn-smart-reschedule (string-to-number (word-at-point t)))
+      (anki-learn-smart-reschedule (let ((level (word-at-point t)))
+                                     (cond ((equal level "AGAIN") 2)
+                                           ((equal level "HARD") 3)
+                                           ((equal level "GOOD") 4)
+                                           ((equal level "EASY") 5))))
       (anki))))
 
 
