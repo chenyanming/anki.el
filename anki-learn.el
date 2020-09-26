@@ -18,7 +18,7 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;;; Essentially copied from `org-learn.el', but modified to work on hash table.
+;;; Essentially copied from `org-learn.el' and `org-drill.el', but modified to work on `anki.el'.
 
 ;;; Code:
 
@@ -174,7 +174,11 @@ If EF is less than 1.3 then let EF be 1.3."
                                                    nil) )
              collect (format "%s" (let ((days (nth 0 next-learn-data)))
                                          (cond ((< days 0) "<1 min")
-                                               (t (format "%d d" days))))))))
+                                               ((= days 1) "1 d")
+                                               ((= days 6) "6 d")
+                                               ((= days 365) "1 yr")
+                                               ((> days 365) (format "%0.1f yr" (/ days 365)))
+                                               (t (format "%0.1f d" days))))))))
 
 ;;; SM2 Algorithm =============================================================
 
@@ -204,7 +208,31 @@ really sensible."
   :group 'anki
   :type '(choice (const 2) (const 1)))
 
+(defcustom anki-learn-add-random-noise-to-intervals-p
+  nil
+  "If true, the number of days until an item's next repetition
+will vary slightly from the interval calculated by the SM2
+algorithm. The variation is very small when the interval is
+small, but scales up with the interval."
+  :group 'anki-learn
+  :type 'boolean)
 
+
+(defun anki-learn-random-dispersal-factor ()
+  "Returns a random number between 0.5 and 1.5.
+
+This returns a strange random number distribution. See
+http://www.supermemo.com/english/ol/sm5.htm for details."
+  (let ((a 0.047)
+        (b 0.092)
+        (p (- (cl-random 1.0) 0.5)))
+    (cl-flet ((sign (n)
+                    (cond ((zerop n) 0)
+                          ((cl-plusp n) 1)
+                          (t -1))))
+      (/ (+ 100 (* (* (/ -1 b) (log (- 1 (* (/ b a ) (abs p)))))
+                   (sign p)))
+         100.0))))
 
 (defun anki-learn-random-dispersal-factor ()
   "Returns a random number between 0.5 and 1.5.
@@ -263,9 +291,21 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
            (interval
             (cond
              ((<= n 1) 1)
-             ((= n 2) 6)
+             ((= n 2)
+              (cond
+               (anki-learn-add-random-noise-to-intervals-p
+                (cl-case quality
+                  (5 6)
+                  (4 4)
+                  (3 3)
+                  (2 1)
+                  (t -1)))
+               (t 6)))
              (t (* last-interval next-ef)))))
-      (list interval
+      (list (if anki-learn-add-random-noise-to-intervals-p
+                (+ last-interval (* (- interval last-interval)
+                                    (anki-learn-random-dispersal-factor)))
+              interval)
             (1+ n)
             next-ef
             of-matrix))))
