@@ -667,6 +667,6 @@ This function honors `shr-max-image-proportion' if possible."
                 ;; only collect media files
                 (if (string-match-p "\\.\\(mp3\\|wav\\|m4a\\|mp4\\)$" url)
                     (push (list string url beg end) collected-list)))))
-        collected-list))))
+        (nreverse collected-list)))))
 
 (provide 'anki-card)
