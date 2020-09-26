@@ -123,6 +123,7 @@ Optional argument INDEX is the number of anki in the list."
          (card (anki-get-card item))
          (question (nth 0 card))
          (answer (nth 1 card))
+         (mock-due-date (anki-learn-mock-smart-reschedule id))
          (number (or index (if anki-in-sequence
                                anki-number
                              (random (1- (length anki-search-entries))))))
@@ -140,22 +141,30 @@ Optional argument INDEX is the number of anki in the list."
       ;;                             'face font-lock-warning-face
       ;;                             'mouse-face 'mode-line-highlight
       ;;                             'keymap answer-map) " " ))
-      (insert (concat (propertize "AGAIN"
-                                  'face '(:background "orange red" :height 1.5)
-                                  'mouse-face 'mode-line-highlight
-                                  'keymap answer-map) " " ))
-      (insert (concat (propertize "HARD"
-                                  'face '(:background "grey"  :height 1.5)
-                                  'mouse-face 'mode-line-highlight
-                                  'keymap answer-map) " " ))
-      (insert (concat (propertize "GOOD"
-                                  'face '(:background "green"  :height 1.5)
-                                  'mouse-face 'mode-line-highlight
-                                  'keymap answer-map) " " ))
-      (insert (concat (propertize "EASY"
-                                  'face '(:background "light sky blue" :height 1.5)
-                                  'mouse-face 'mode-line-highlight
-                                  'keymap answer-map) " " )))
+      (insert (propertize (format "%s" "AGAIN")
+                          'face '(:background "orange red" :height 1.5)
+                          'mouse-face 'mode-line-highlight
+                          'keymap answer-map))
+      (insert (propertize (format " %s " (nth 2 mock-due-date))
+                          'face 'bold))
+      (insert (propertize (format "%s"  "HARD")
+                          'face '(:background "grey"  :height 1.5)
+                          'mouse-face 'mode-line-highlight
+                          'keymap answer-map))
+      (insert (propertize (format " %s " (nth 3 mock-due-date))
+                          'face 'bold))
+      (insert (propertize (format "%s"  "GOOD")
+                          'face '(:background "green"  :height 1.5)
+                          'mouse-face 'mode-line-highlight
+                          'keymap answer-map))
+      (insert (propertize (format " %s " (nth 4 mock-due-date))
+                          'face 'bold))
+      (insert (propertize (format "%s"  "EASY")
+                          'face '(:background "light sky blue" :height 1.5)
+                          'mouse-face 'mode-line-highlight
+                          'keymap answer-map))
+      (insert (propertize (format " %s " (nth 5 mock-due-date))
+                          'face 'bold)))
 
     (setq beg (point))
     (insert "<h1>Question</h1>")

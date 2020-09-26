@@ -159,7 +159,22 @@ If EF is less than 1.3 then let EF be 1.3."
 
     (message due-date)))
 
-
+(defun anki-learn-mock-smart-reschedule (&optional id)
+  "TODO: Get mock due date for all quality based on ID."
+  (let* ((id (or id (anki-find-card-id-at-point)))
+         (learn-data (anki-learn-get-learn-data id))
+         next-learn-data)
+    ;; next interval - learn data
+    (cl-loop for quality in '(0 1 2 3 4 5)
+             if (setq next-learn-data
+                      (determine-next-interval-sm2 (nth 0 learn-data)
+                                                   (nth 1 learn-data)
+                                                   (nth 2 learn-data)
+                                                   quality
+                                                   nil) )
+             collect (format "%s" (let ((days (nth 0 next-learn-data)))
+                                         (cond ((< days 0) "<1 min")
+                                               (t (format "%d d" days))))))))
 
 ;;; SM2 Algorithm =============================================================
 
