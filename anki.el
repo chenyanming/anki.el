@@ -87,7 +87,7 @@
 
 (defun anki-header ()
   "Header function for *anki* buffer."
-  (format "%s: %s  %s  %s  %s  %s  %s  Index: %s"
+  (format "%s: %s  %s  %s  %s  %s  %s"
           (propertize "Anki" 'face font-lock-warning-face)
           anki-core-current-deck
           ;; (concat (propertize "r" 'face 'bold) (if anki-in-sequence ":in sequence" ":random"))
@@ -99,7 +99,8 @@
           (concat (propertize "n" 'face 'bold) "ext")
           (concat (propertize "p" 'face 'bold) "revious")
           (concat (propertize "q" 'face 'bold) "uit")
-          (concat (number-to-string anki-number))))
+          ;; (concat (number-to-string anki-number))
+          ))
 
 ;;;###autoload
 (defun anki (&optional index)
