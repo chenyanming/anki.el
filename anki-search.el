@@ -145,9 +145,9 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
             (standard-output (current-buffer)))
         (erase-buffer)
         ;; reset anki-virtual-library-name
-        (unless (-contains? (mapcar 'cdr anki-virtual-library-alist) anki-search-filter)
-          (setq anki-virtual-library-name anki-virtual-library-default-name))
-        (anki-search--update-list)
+        ;; (unless (-contains? (mapcar 'cdr anki-virtual-library-alist) anki-search-filter)
+        ;;   (setq anki-virtual-library-name anki-virtual-library-default-name))
+        ;; (anki-search--update-list)
         ;; (setq anki-search-entries (anki-candidates))
         (dolist (entry anki-search-entries)
           (funcall anki-search-print-entry-function entry)
