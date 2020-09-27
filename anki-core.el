@@ -98,7 +98,7 @@ ON cards.nid = notes.id "
 
 (defcustom anki-core-database-file
   (expand-file-name "anki-database.sqlite"  anki-collection-dir)
-  "The file used to store the forge database."
+  "The file used to store the anki.el database."
   :group 'anki
   :type 'file)
 
@@ -196,27 +196,7 @@ Argument SQL-QUERY is the sqlite sql query string."
                  (json-read-from-string (anki-core-query anki-core-query-decks))))
         result)
     (setq anki-core-decks-hash-table decks)
-    decks
-    ;; (dolist (deck decks result)
-    ;;   (let* ((id (alist-get 'id deck))
-    ;;          (mod (alist-get 'mod deck))
-    ;;          (name (alist-get 'name deck))
-    ;;          (usn (alist-get 'usn deck))
-    ;;          (lrnToday (alist-get 'lrnToday deck))
-    ;;          (revToday (alist-get 'revToday deck))
-    ;;          (newToday (alist-get 'newToday deck))
-    ;;          (timeToday (alist-get 'timeToday deck))
-    ;;          (collapsed (alist-get 'collapsed deck))
-    ;;          (desc (alist-get 'desc deck))
-    ;;          (dyn (alist-get 'dyn deck))
-    ;;          (dyn (alist-get 'dyn deck))
-    ;;          (conf (alist-get 'conf deck))
-    ;;          (conf (alist-get 'conf deck))
-    ;;          (extendNew (alist-get 'extendNew deck))
-    ;;          (extendRev (alist-get 'extendRev deck)))
-    ;;     (push id result)))
-
-    ))
+    decks))
 
 (defun anki-core-parse-models ()
   (let ((models (let* ((json-array-type 'list) ;;;;;;;;; 'vector is the default
@@ -228,60 +208,17 @@ Argument SQL-QUERY is the sqlite sql query string."
 
 (defun anki-core-parse-cards ()
   (let* ((query-result (anki-core-query anki-core-query-cards))
-         (lines (if query-result (split-string query-result anki-sql-newline)))
-         (decks (anki-core-parse-decks))
-         (models (anki-core-parse-models)))
-    ;; (anki-core-load-learn-data)         ; load the learn data
+         (lines (if query-result (split-string query-result anki-sql-newline))))
+    (anki-core-parse-models)            ; parse models
+    (anki-core-parse-decks)             ; parse decks
     (cond ((equal "" query-result) '(""))
           (t
-           ;; (let (result)
-           ;;   (dolist (line lines result)
-           ;;     ;; decode and push to result
-           ;;     (push (anki-core-parse-card-to-hash-table line decks) result)
-           ;;     ;; (push (anki-core-parse-card-to-plist line decks) result)
-           ;;     ))
-
            ;; collect lines of sql result into hash tables
            (cl-loop for line in lines
                     if (not (equal line "" ))            ; avoid empty line
-                    collect (anki-core-parse-card-to-hash-table line decks models))))))
+                    collect (anki-core-parse-card-to-hash-table line))))))
 
-(defun anki-core-parse-card-to-plist (query-result decks)
-  "Builds alist out of a full `anki-core-query' query record result.
-Argument QUERY-RESULT is the query result generate by sqlite."
-  (if query-result
-      (let ((spl-query-result (split-string query-result anki-sql-separator)))
-        `(:id              ,(anki-decode-milliseconds (nth 0 spl-query-result))
-          :nid            ,(nth 1 spl-query-result)
-          :did            ,(anki-core-get-deck (nth 2 spl-query-result) decks)
-          :ord            ,(nth 3 spl-query-result)
-          :mod            ,(anki-decode-seconds (nth 4 spl-query-result))
-          :usn            ,(nth 5 spl-query-result)
-          :type            ,(nth 6 spl-query-result)
-          :queue            ,(nth 7 spl-query-result)
-          :due            ,(nth 8 spl-query-result)
-          :ivi            ,(nth 9 spl-query-result)
-          :factor            ,(nth 10 spl-query-result)
-          :reps            ,(nth 11 spl-query-result)
-          :lapses            ,(nth 12 spl-query-result)
-          :left            ,(nth 13 spl-query-result)
-          :odue            ,(nth 14 spl-query-result)
-          :odid            ,(nth 15 spl-query-result)
-          :flags            ,(nth 16 spl-query-result)
-          :data            ,(nth 17 spl-query-result)
-          :id-1            ,(nth 18 spl-query-result)
-          :guid            ,(nth 19 spl-query-result)
-          :mid            ,(nth 20 spl-query-result)
-          :mod-1            ,(nth 21 spl-query-result)
-          :usn-1            ,(nth 22 spl-query-result)
-          :tags            ,(nth 23 spl-query-result)
-          :flds            ,(nth 24 spl-query-result)
-          :sfld            ,(nth 25 spl-query-result)
-          :csum            ,(nth 26 spl-query-result)
-          :flags-1            ,(nth 27 spl-query-result)
-          :data-1            ,(nth 28 spl-query-result)))))
-
-(defun anki-core-parse-card-to-hash-table (query-result decks models)
+(defun anki-core-parse-card-to-hash-table (query-result)
   "Builds alist out of a full `anki-core-query' query record result.
 Argument QUERY-RESULT is the query result generate by sqlite."
   (let ((card-hash-table (make-hash-table :test 'equal)))
@@ -335,19 +272,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
                   (push id anki-core-database-index)
                   (puthash id card cards)))
     (setq anki-core-hash-table cards)
-    cards)
-
-  ;; (let ((cards (anki-core-parse-cards)) result)
-  ;;   (dolist (card cards result)
-  ;;     ;; (push (list (anki-core-format-card-plist card) card) result)
-  ;;     (push (list (anki-core-format-card-hash-table card) card) result)))
-  )
-
-(defun anki-core-format-card-plist (card)
-  "NOT USED: Format one card ITEM."
-  (let* ((flds (plist-get card :flds))
-         (sfld (plist-get card :sfld)))
-    (format "%s          %s" sfld (replace-regexp-in-string "\037" "\n" flds))))
+    cards))
 
 (defun anki-core-format-card-hash-table (card)
   "Format CARD to one string which used in *anki-search*."
@@ -403,35 +328,6 @@ Argument QUERY-RESULT is the query result generate by sqlite."
   (if mid
       (gethash mid anki-core-models-hash-table)))
 
-;;;###autoload
-(defun anki-list-decks ()
-  (interactive)
-  (anki-core-db)
-  (let* ((deck (let* ((pdecks (anki-core-parse-decks))
-                      (vdecks (hash-table-values pdecks)))
-                 (cl-loop for deck in vdecks collect
-                          (cons (gethash "name" deck) (gethash "id" deck)))))
-         (deck-name (setq anki-current-deck (completing-read "Decks: " deck)))
-         (selected-did (setq anki-current-deck-id (cdr (assoc deck-name deck)) )))
-    ;; Get all cards
-    (if anki-search-entries
-        anki-search-entries
-      (progn
-        (setq anki-search-entries (anki-core-cards-list))
-        (setq anki-full-entries anki-search-entries)))
-    ;; Filter cards
-    (setq anki-search-entries
-          (cl-loop for entry in anki-full-entries
-                   when (hash-table-p entry)
-                   for table-did = (anki-core-get-deck (gethash 'did entry))
-                   if (hash-table-p table-did)
-                   if (equal selected-did (gethash "id" table-did))
-                   collect entry)))
-  (cond ((eq major-mode 'anki-search-mode)
-         (anki-browser))
-        (t
-         (anki 0))))
-
 (defun anki-core-list-models ()
   (interactive)
   (completing-read "Models: "
@@ -463,42 +359,5 @@ Argument QUERY-RESULT is the query result generate by sqlite."
     (if (and id (time-less-p due-date (current-time))) ; the lastest card due-date is less than current date
         (gethash id anki-core-hash-table)
       (nth (random (1- (length anki-search-entries))) anki-search-entries))))
-
-
-;; (time-less-p  (encode-time (parse-time-string (nth 2 (car (anki-core-sql [:select [id, (funcall min due_days), due_date]
-;;                      :from [:select *
-;;                             :from [:select :distinct [id due_days due_date] :from revlog :order-by ROWID :asc]
-;;                             :group-by id]])) ) ) ) (current-time)  )
-
-;; SELECT id, MIN(due_days), due_date FROM (SELECT * FROM (SELECT DISTINCT id, due_days, due_date from revlog ORDER BY ROWID DESC) GROUP BY id)
-;; SELECT id, did, MIN(due_days), due_date FROM
-;; (SELECT * FROM (SELECT DISTINCT id, did, due_days, due_date from revlog WHERE did = 1549898228880 ORDER BY ROWID DESC) GROUP BY id )
-
-;; (defun anki-core-backup-database (&rest rest)
-;;   "TODO: Backup the anki database to a text file, except media files."
-;;   (interactive)
-;;   (let* ((date (format-time-string "%Y-%m-%d"))
-;;         (file (read-file-name "Save Anki Database to: " "~" (concat "Anki_Backup_" date ".txt") (pop rest))))
-;;     (anki-core-write (shell-quote-argument (expand-file-name file)) (anki-core-cards))))
-
-;; (defun anki-core-load-database ()
-;;   "TODO: Load the anki database which is genereated by `anki-core-backup'."
-;;   (interactive)
-;;   (let* ((file (read-file-name "Load Anki Database: " "~" )))
-;;     (anki-core-read (shell-quote-argument (expand-file-name file)) 'anki-core-database-index)
-;;     (setq anki-full-entries (hash-table-values anki-core-database-index))
-;;     (setq anki-search-entries (hash-table-values anki-core-database-index))))
-
-;; (defun anki-core-backup-learn-data ()
-;;   "TODO: Backup the anki learn data to a text file."
-;;   (interactive)
-;;   (anki-core-write (expand-file-name (concat (file-name-as-directory anki-collection-dir) "learn.txt")) anki-core-database-review-logs))
-
-;; (defun anki-core-load-learn-data ()
-;;   "TODO: Load the anki learn data."
-;;   (interactive)
-;;   (let ((file (expand-file-name (concat (file-name-as-directory anki-collection-dir) "learn.txt"))))
-;;     (if (file-exists-p file)
-;;         (anki-core-read file 'anki-core-database-review-logs))))
 
 (provide 'anki-core)

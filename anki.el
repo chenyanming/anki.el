@@ -219,8 +219,6 @@ Optional argument INDEX is the number of anki in the list."
 
     ;; (anki-render-html)
 
-
-
     (put-text-property (point-min) (+ 1 (point-min) ) 'anki-entry item)
 
     (goto-char (point-min))             ; cursor is always in the (point-min)
@@ -302,5 +300,35 @@ Argument EVENT mouse event."
     (with-current-buffer (window-buffer window)
       (goto-char pos)
       (message "ANSWER BUTTON IS IN TODO LIST."))))
+
+;;;###autoload
+(defun anki-list-decks ()
+  "List decks."
+  (interactive)
+  (anki-core-db)
+  (let* ((deck (let* ((pdecks (anki-core-parse-decks))
+                      (vdecks (hash-table-values pdecks)))
+                 (cl-loop for deck in vdecks collect
+                          (cons (gethash "name" deck) (gethash "id" deck)))))
+         (deck-name (setq anki-current-deck (completing-read "Decks: " deck)))
+         (selected-did (setq anki-current-deck-id (cdr (assoc deck-name deck)) )))
+    ;; Get all cards
+    (if anki-search-entries
+        anki-search-entries
+      (progn
+        (setq anki-search-entries (anki-core-cards-list))
+        (setq anki-full-entries anki-search-entries)))
+    ;; Filter cards
+    (setq anki-search-entries
+          (cl-loop for entry in anki-full-entries
+                   when (hash-table-p entry)
+                   for table-did = (anki-core-get-deck (gethash 'did entry))
+                   if (hash-table-p table-did)
+                   if (equal selected-did (gethash "id" table-did))
+                   collect entry)))
+  (cond ((eq major-mode 'anki-search-mode)
+         (anki-browser))
+        (t
+         (anki 0))))
 
 (provide 'anki)
