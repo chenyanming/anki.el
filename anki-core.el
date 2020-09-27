@@ -85,6 +85,12 @@ ON cards.nid = notes.id "
 (defvar anki-current-deck-id ""
   "Current deck id.")
 
+(defvar anki-core-decks-hash-table ""
+  "Parsed decks information.")
+
+(defvar anki-core-models-hash-table ""
+  "Parsed models information.")
+
 (defvar anki-core-hash-table
   (make-hash-table :test 'equal))
 
@@ -189,6 +195,7 @@ Argument SQL-QUERY is the sqlite sql query string."
                       (json-false nil))
                  (json-read-from-string (anki-core-query anki-core-query-decks))))
         result)
+    (setq anki-core-decks-hash-table decks)
     decks
     ;; (dolist (deck decks result)
     ;;   (let* ((id (alist-get 'id deck))
@@ -213,9 +220,11 @@ Argument SQL-QUERY is the sqlite sql query string."
 
 (defun anki-core-parse-models ()
   (let ((models (let* ((json-array-type 'list) ;;;;;;;;; 'vector is the default
-                      (json-object-type 'hash-table)
-                      (json-false nil))
-                 (json-read-from-string (anki-core-query anki-core-query-models))))) models))
+                       (json-object-type 'hash-table)
+                       (json-false nil))
+                  (json-read-from-string (anki-core-query anki-core-query-models)))))
+    (setq anki-core-models-hash-table models)
+    models))
 
 (defun anki-core-parse-cards ()
   (let* ((query-result (anki-core-query anki-core-query-cards))
@@ -244,7 +253,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
       (let ((spl-query-result (split-string query-result anki-sql-separator)))
         `(:id              ,(anki-decode-milliseconds (nth 0 spl-query-result))
           :nid            ,(nth 1 spl-query-result)
-          :did            ,(anki-core-decode-did (nth 2 spl-query-result) decks)
+          :did            ,(anki-core-get-deck (nth 2 spl-query-result) decks)
           :ord            ,(nth 3 spl-query-result)
           :mod            ,(anki-decode-seconds (nth 4 spl-query-result))
           :usn            ,(nth 5 spl-query-result)
@@ -280,7 +289,8 @@ Argument QUERY-RESULT is the query result generate by sqlite."
         (let ((spl-query-result (split-string query-result anki-sql-separator)))
           (puthash 'id              (nth 0 spl-query-result) card-hash-table )
           (puthash 'nid            (nth 1 spl-query-result) card-hash-table )
-          (puthash 'did            (anki-core-decode-did (nth 2 spl-query-result) decks) card-hash-table)
+          ;; (puthash 'did            (anki-core-get-deck (nth 2 spl-query-result) decks) card-hash-table)
+          (puthash 'did            (nth 2 spl-query-result) card-hash-table)
           (puthash 'ord            (nth 3 spl-query-result) card-hash-table )
           ;; (puthash 'mod            (nth 4 spl-query-result) card-hash-table )
           ;; (puthash 'usn            (nth 5 spl-query-result) card-hash-table )
@@ -298,7 +308,8 @@ Argument QUERY-RESULT is the query result generate by sqlite."
           ;; (puthash 'data            (nth 17 spl-query-result) card-hash-table )
           ;; (puthash 'id-1            (nth 18 spl-query-result) card-hash-table )
           ;; (puthash 'guid            (nth 19 spl-query-result) card-hash-table )
-          (puthash 'mid            (anki-core-decode-mid (nth 20 spl-query-result) models) card-hash-table )
+          ;; (puthash 'mid            (anki-core-get-model (nth 20 spl-query-result) models) card-hash-table )
+          (puthash 'mid            (nth 20 spl-query-result) card-hash-table )
           ;; (puthash 'mod-1            (nth 21 spl-query-result) card-hash-table )
           ;; (puthash 'usn-1            (nth 22 spl-query-result) card-hash-table )
           ;; (puthash 'tags            (nth 23 spl-query-result) card-hash-table )
@@ -346,9 +357,9 @@ Argument QUERY-RESULT is the query result generate by sqlite."
              (sfld (gethash 'sfld card))
              (flds (gethash 'flds card))
              ;; (due (anki-core-decode-due card))
-             (did (gethash 'did card))
+             (did (anki-core-get-deck (gethash 'did card)))
              (deck-name (gethash "name" did))
-             (mid (gethash 'mid card))
+             (mid (anki-core-get-model (gethash 'mid card)))
              (model-name (gethash "name" mid))
              (model-flds (gethash "flds" mid))
              (template (anki-core-decode-tmpls ord mid))
@@ -382,13 +393,15 @@ Argument QUERY-RESULT is the query result generate by sqlite."
            (concat "Relearning: " due ))
           (t ""))))
 
-(defun anki-core-decode-did (input decks)
-  (if input
-      (gethash input decks)))
+(defun anki-core-get-deck (did)
+  "Get Deck based on DID."
+  (if did
+      (gethash did anki-core-decks-hash-table)))
 
-(defun anki-core-decode-mid (input models)
-  (if input
-      (gethash input models)))
+(defun anki-core-get-model (mid)
+  "Get the model based on MID."
+  (if mid
+      (gethash mid anki-core-models-hash-table)))
 
 ;;;###autoload
 (defun anki-list-decks ()
@@ -410,7 +423,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
     (setq anki-search-entries
           (cl-loop for entry in anki-full-entries
                    when (hash-table-p entry)
-                   for table-did = (gethash 'did entry)
+                   for table-did = (anki-core-get-deck (gethash 'did entry))
                    if (hash-table-p table-did)
                    if (equal selected-did (gethash "id" table-did))
                    collect entry)))

@@ -1146,7 +1146,7 @@
 
 (insert "")
 
-(anki-core-decode-mid "1434531251878" (anki-core-parse-models) )
+(anki-core-get-model "1434531251878" (anki-core-parse-models) )
 
 (let (table)
   (setq table #s(hash-table size 65 test equal rehash-size 1.5 rehash-threshold 0.8125 data

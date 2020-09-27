@@ -392,7 +392,7 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
   "TODO: "
   (let ((card (anki-find-card-at-point)))
     (if (hash-table-p card)
-        (gethash "id" (gethash 'did card) ))))
+        (gethash "id" (anki-core-get-deck (gethash 'did card))))))
 
 (defun anki-learn-get-card (id)
   "TODO: Get card based on card id."

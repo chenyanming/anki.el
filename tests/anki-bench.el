@@ -25,3 +25,7 @@
 (profiler-stop)
 (anki-core-parse-cards)
 (profiler-report)
+anki-core-decks-hash-table
+anki-core-models-hash-table
+(anki-core-get-deck (gethash 'did card))
+(anki-core-get-model (gethash 'mid card))

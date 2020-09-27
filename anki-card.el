@@ -148,7 +148,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
   (let* ((buff (get-buffer-create (anki-show--buffer-name entry)))
          (id (gethash 'id entry))       ; card id
          (flds (gethash 'flds entry))   ; note fields
-         (model (gethash 'mid entry)) ; model names
+         (model (anki-core-get-model (gethash 'mid entry))) ; model hash table
          (model-names (anki-models-names model))
          (original (point))
          (file-map (make-sparse-keymap))
@@ -202,7 +202,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
   (let* ((buff (get-buffer-create (anki-show--buffer-name entry)))
          (id (gethash 'id entry))       ; card id
          (flds (gethash 'flds entry))   ; note fields
-         (model (gethash 'mid entry)) ; model names
+         (model (anki-core-get-model (gethash 'mid entry))) ; model hash table
          (css (gethash "css" model))
          (model-names (anki-models-names model))
          (ord (gethash 'ord entry))     ; template number
@@ -268,7 +268,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
 (defun anki-get-card (entry)
   "Get a ENTRY's question, answer and css."
   (let* ((flds (gethash 'flds entry))   ; note fields
-         (model (gethash 'mid entry))   ; model names
+         (model (anki-core-get-model (gethash 'mid entry)))   ; model hash table
          (model-names (anki-models-names model))
          (css (gethash "css" model))
          (ord (gethash 'ord entry))     ; template number
@@ -308,7 +308,7 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
   (let* ((buff (get-buffer-create (anki-show--buffer-name entry)))
          (id (gethash 'id entry))       ; card id
          (flds (gethash 'flds entry))   ; note fields
-         (model (gethash 'mid entry))   ; model names
+         (model (anki-core-get-model (gethash 'mid entry)))   ; model hash table
          (model-names (anki-models-names model))
          (css (gethash "css" model))
          (ord (gethash 'ord entry))     ; template number

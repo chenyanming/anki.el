@@ -145,7 +145,7 @@
     (setq anki-search-entries
           (cl-loop for entry in anki-full-entries
                    when (hash-table-p entry)
-                   for table-did = (gethash 'did entry)
+                   for table-did = (anki-core-get-deck (gethash 'did entry))
                    if (hash-table-p table-did)
                    if (equal selected-did (gethash "id" table-did))
                    collect entry))
