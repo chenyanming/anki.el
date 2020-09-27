@@ -89,7 +89,7 @@
   "Header function for *anki* buffer."
   (format "%s: %s  %s  %s  %s  %s  %s  Index: %s"
           (propertize "Anki" 'face font-lock-warning-face)
-          anki-current-deck
+          anki-core-current-deck
           ;; (concat (propertize "r" 'face 'bold) (if anki-in-sequence ":in sequence" ":random"))
           (concat (propertize "l" 'face 'bold) "ist")
           (concat (propertize "r" 'face 'bold) "eplay")
@@ -117,7 +117,7 @@ Optional argument INDEX is the number of anki in the list."
   (setq buffer-read-only nil)
   (erase-buffer)
   (setq anki-last-number anki-number)
-  (let* ((item (anki-learn-get-latest-due-card-or-random-card))
+  (let* ((item (anki-core-get-latest-due-card-or-random-card))
          ;; (item (or (nth (or index anki-number) anki-search-entries)
          ;;           (nth (setq anki-number 0) anki-search-entries)))
          (id (gethash 'id item))
@@ -310,8 +310,8 @@ Argument EVENT mouse event."
                       (vdecks (hash-table-values pdecks)))
                  (cl-loop for deck in vdecks collect
                           (cons (gethash "name" deck) (gethash "id" deck)))))
-         (deck-name (setq anki-current-deck (completing-read "Decks: " deck)))
-         (selected-did (setq anki-current-deck-id (cdr (assoc deck-name deck)) )))
+         (deck-name (setq anki-core-current-deck (completing-read "Decks: " deck)))
+         (selected-did (setq anki-core-current-deck-id (cdr (assoc deck-name deck)) )))
     ;; Get all cards
     (if anki-search-entries
         anki-search-entries

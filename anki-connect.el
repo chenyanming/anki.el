@@ -132,7 +132,7 @@
                       (vdecks (hash-table-values pdecks)))
                  (cl-loop for deck in vdecks collect
                           (cons (gethash "name" deck) (gethash "id" deck)))))
-         (deck-name (setq anki-current-deck (completing-read "Decks: " deck)))
+         (deck-name (setq anki-core-current-deck (completing-read "Decks: " deck)))
          (selected-did (cdr (assoc deck-name deck)))
          current-card)
     ;; Get all cards

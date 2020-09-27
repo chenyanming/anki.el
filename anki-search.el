@@ -92,7 +92,7 @@ When live editing the filter, it is bound to :live.")
 Indicating the library you use."
   (format "%s: %s   %s"
           (propertize "Anki Browser" 'face font-lock-warning-face)
-          anki-current-deck
+          anki-core-current-deck
           (concat
            (propertize (format "Total: %s"
                                (if (equal anki-search-entries '(""))
@@ -263,7 +263,7 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
 You can use it with org-drill."
   (interactive)
   (with-temp-file (concat (file-name-as-directory anki-collection-dir) "export.org")
-    (insert (format "<h1>%s</h1>" anki-current-deck))
+    (insert (format "<h1>%s</h1>" anki-core-current-deck))
     (dolist (item anki-search-entries)
       (when (hash-table-p item)
         (let* ((card (anki-get-card item))
@@ -280,7 +280,7 @@ You can use it with org-drill."
   (interactive)
   (with-temp-file (concat (file-name-as-directory anki-collection-dir) "export.html")
     (insert "<html><body>")
-    (insert (format "<h1>%s</h1>" anki-current-deck))
+    (insert (format "<h1>%s</h1>" anki-core-current-deck))
     (dolist (item anki-search-entries)
       (when (hash-table-p item)
         (let* ((card (anki-get-card item))

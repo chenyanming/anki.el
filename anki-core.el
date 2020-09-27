@@ -36,26 +36,23 @@ FROM cards
 LEFT JOIN  notes
 ON cards.nid = notes.id
 )
-
 SELECT d.*, revlog.*
 FROM d
 LEFT JOIN revlog
 ON d.id = revlog.cid "
-
-  "TODO anki database query statement.")
+  "NOT USED anki database query review logs statement.")
 
 (defvar anki-core-query-cards "
 SELECT cards.*, notes.*
 FROM cards
 LEFT JOIN  notes
 ON cards.nid = notes.id "
+  "TODO anki database query cards statement.")
 
-
-
-  "TODO anki database query statement.")
-
-(defvar anki-core-query-decks "SELECT decks FROM col")
-(defvar anki-core-query-models "SELECT models FROM col")
+(defvar anki-core-query-decks "SELECT decks FROM col"
+  "TODO anki database query decks statement.")
+(defvar anki-core-query-models "SELECT models FROM col"
+  "TODO anki database query models statement.")
 
 (defcustom anki-sql-separator "\3"
   "SQL separator, used in parsing SQL result into list."
@@ -79,10 +76,10 @@ ON cards.nid = notes.id "
   :group 'anki
   :type 'string)
 
-(defvar anki-current-deck ""
+(defvar anki-core-current-deck ""
   "Current deck.")
 
-(defvar anki-current-deck-id ""
+(defvar anki-core-current-deck-id ""
   "Current deck id.")
 
 (defvar anki-core-decks-hash-table ""
@@ -155,23 +152,19 @@ ON cards.nid = notes.id "
       (emacsql db `[:update version :set  (= user-version ,dbv)])
     (emacsql db `[:insert :into version :values ([(,@anki-core-db-version)])])))
 
-
 (defun anki-core-sql (sql &rest args)
   (if (stringp sql)
       (emacsql (anki-core-db) (apply #'format sql args))
     (apply #'emacsql (anki-core-db) sql args)))
 
-
-
-
 (defvar anki-core-database-index '()
-  "Anki core database index.")
+  "Anki core database cards index.")
 
 (defvar anki-core-database-review-logs '()
-  "Anki core database review logs.")
+  "Anki core database cards review logs.")
 
 (defun anki-core-query (sql-query)
-  "Query calibre databse and return the result.
+  "Query collections.anki2 databse and return the result.
 Argument SQL-QUERY is the sqlite sql query string."
   (interactive)
   (let ((file (concat (file-name-as-directory anki-collection-dir) "collection.anki2"))
@@ -190,16 +183,17 @@ Argument SQL-QUERY is the sqlite sql query string."
             (shell-command-to-string cmd))) nil)))
 
 (defun anki-core-parse-decks ()
-  (let ((decks (let* ((json-array-type 'list) ;;;;;;;;; 'vector is the default
+  "Parse decks and save to `anki-core-decks-hash-table'."
+  (let ((decks (let* ((json-array-type 'list)
                       (json-object-type 'hash-table)
                       (json-false nil))
-                 (json-read-from-string (anki-core-query anki-core-query-decks))))
-        result)
+                 (json-read-from-string (anki-core-query anki-core-query-decks)))))
     (setq anki-core-decks-hash-table decks)
     decks))
 
 (defun anki-core-parse-models ()
-  (let ((models (let* ((json-array-type 'list) ;;;;;;;;; 'vector is the default
+  "Parse models and save to `anki-core-models-hash-table'."
+  (let ((models (let* ((json-array-type 'list)
                        (json-object-type 'hash-table)
                        (json-false nil))
                   (json-read-from-string (anki-core-query anki-core-query-models)))))
@@ -207,6 +201,7 @@ Argument SQL-QUERY is the sqlite sql query string."
     models))
 
 (defun anki-core-parse-cards ()
+  "Parse cards."
   (let* ((query-result (anki-core-query anki-core-query-cards))
          (lines (if query-result (split-string query-result anki-sql-newline))))
     (anki-core-parse-models)            ; parse models
@@ -219,7 +214,7 @@ Argument SQL-QUERY is the sqlite sql query string."
                     collect (anki-core-parse-card-to-hash-table line))))))
 
 (defun anki-core-parse-card-to-hash-table (query-result)
-  "Builds alist out of a full `anki-core-query' query record result.
+  "Builds hash table out of a full `anki-core-query' query record result.
 Argument QUERY-RESULT is the query result generate by sqlite."
   (let ((card-hash-table (make-hash-table :test 'equal)))
     (if query-result
@@ -259,7 +254,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
     card-hash-table))
 
 (defun anki-core-cards-list ()
-  "Return all cards as a list of hashtables."
+  "Return all cards as a list of hash tables."
   (hash-table-values (anki-core-cards)))
 
 (defun anki-core-cards ()
@@ -277,16 +272,16 @@ Argument QUERY-RESULT is the query result generate by sqlite."
 (defun anki-core-format-card-hash-table (card)
   "Format CARD to one string which used in *anki-search*."
   (if (hash-table-p card)
-      (let* ((id (gethash 'id card))
+      (let* (;; (id (gethash 'id card))
              (ord (gethash 'ord card))
              (sfld (gethash 'sfld card))
-             (flds (gethash 'flds card))
+             ;; (flds (gethash 'flds card))
              ;; (due (anki-core-decode-due card))
              (did (anki-core-get-deck (gethash 'did card)))
              (deck-name (gethash "name" did))
              (mid (anki-core-get-model (gethash 'mid card)))
-             (model-name (gethash "name" mid))
-             (model-flds (gethash "flds" mid))
+             ;; (model-name (gethash "name" mid))
+             ;; (model-flds (gethash "flds" mid))
              (template (anki-core-decode-tmpls ord mid))
              ;; (due-date (anki-learn-get-due-date id)); get due date take a lot of time, disable first
              )
@@ -329,6 +324,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
       (gethash mid anki-core-models-hash-table)))
 
 (defun anki-core-list-models ()
+  "List all models."
   (interactive)
   (completing-read "Models: "
                    (let* ((pmodels (anki-core-parse-models))
@@ -337,21 +333,23 @@ Argument QUERY-RESULT is the query result generate by sqlite."
                               (cons (gethash "name" model) (gethash "id" model))))))
 
 (defun anki-core-write (file data)
+  "NOT USED."
   (with-temp-file file
     (prin1 data (current-buffer))))
 
 (defun anki-core-read (file symbol)
+  "NOT USED."
   (when (boundp symbol)
     (with-temp-buffer
       (insert-file-contents file)
       (goto-char (point-min))
       (set symbol (read (current-buffer))))))
 
-(defun anki-learn-get-latest-due-card-or-random-card ()
+(defun anki-core-get-latest-due-card-or-random-card ()
   "Get latest due card or a random card if no review logs."
   (let* ((result (car (anki-core-sql `[:select [id did (funcall min due_days) due_date]
                                      :from [:select *
-                                            :from [:select :distinct [id did due_days due_date] :from revlog :where (= did ,anki-current-deck-id) :order-by ROWID :asc]
+                                            :from [:select :distinct [id did due_days due_date] :from revlog :where (= did ,anki-core-current-deck-id) :order-by ROWID :asc]
                                             :group-by id]])))
         (id (nth 0 result))
         ;; (due-days (nth 1 result))

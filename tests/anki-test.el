@@ -1291,8 +1291,13 @@
 (anki-learn-get-due-data "1306463892572")
 (anki-learn-get-due-date "1306463892572")
 
+(emacsql
+ (emacsql-sqlite (concat (file-name-as-directory anki-collection-dir) "collection.anki2"))
+ [:select decks :from col])
 
-
+(emacsql
+ (emacsql-sqlite (concat (file-name-as-directory anki-collection-dir) "collection.anki2"))
+ [:select models :from col])
 
 (let ((id (mapcar (lambda (x) (gethash 'id x)) anki-search-entries)))
   (anki-core-sql `[:insert :into id :values([,id])]))
