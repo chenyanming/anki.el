@@ -75,6 +75,7 @@
           (t (nth (random (1- (length anki-search-entries))) anki-search-entries)))))  ; real due_days < 0                      ; real due_days < 0
 
 (defun anki-db-current-deck-reschedule ()
+  "Reschedule the current deck."
   (interactive)
   (anki-core-sql `[:delete :from revlog :where (= did ,anki-core-current-deck-id)]))
 
