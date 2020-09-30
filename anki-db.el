@@ -28,6 +28,11 @@
 (defun anki-db-current-deck-total-card-number ()
   (length anki-search-entries))
 
+(defun anki-db-current-deck-all-review-card-ids ()
+  (mapcar 'car (anki-core-sql `[:select :distinct id :from revlog :where (= did ,anki-core-current-deck-id)])))
+
+(defun anki-db-current-deck-all-new-card-ids ()
+  (seq-difference (mapcar (lambda (x) (gethash 'id x)) anki-search-entries) (anki-db-current-deck-all-review-card-ids)))
 
 (defun anki-db-current-deck-total-due-card-number ()
   (seq-count (lambda (x) (equal x t))
@@ -60,9 +65,13 @@
                                               :group-by id]])))
          (id (nth 0 result))
          ;; (due-days (nth 1 result))
-         (due-date (if id (encode-time (parse-time-string (nth 3 result))))))
-    (if (and id (time-less-p due-date (current-time))) ; the lastest card due-date is less than current date
-        (gethash id anki-core-hash-table)
-      (nth (random (1- (length anki-search-entries))) anki-search-entries))))
+         (real-due-day (if id
+                           (/ (- (time-convert (current-time) 'integer)
+                                 (time-convert (encode-time (parse-time-string (nth 3 result))) 'integer)) (* 24 3600.0)) 0) ))
+    (cond ((and id (> real-due-day 0))  ; real due_days >= 0
+           (gethash id anki-core-hash-table))
+          ((<= real-due-day 0)           ; real due_days = 0
+           (gethash (nth (random (1- (length (anki-db-current-deck-all-new-card-ids)))) (anki-db-current-deck-all-new-card-ids)) anki-core-hash-table))
+          (t (nth (random (1- (length anki-search-entries))) anki-search-entries)))))  ; real due_days < 0                      ; real due_days < 0
 
 (provide 'anki-db)
