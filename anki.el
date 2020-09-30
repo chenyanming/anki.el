@@ -141,7 +141,7 @@ Optional argument INDEX is the number of anki in the list."
   (setq buffer-read-only nil)
   (erase-buffer)
   (setq anki-last-number anki-number)
-  (let* ((item (anki-core-get-latest-due-card-or-random-card))
+  (let* ((item (anki-db-latest-due-card-or-random-card))
          ;; (item (or (nth (or index anki-number) anki-search-entries)
          ;;           (nth (setq anki-number 0) anki-search-entries)))
          (id (gethash 'id item))

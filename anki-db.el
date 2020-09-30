@@ -49,4 +49,17 @@
                                                 :from [:select :distinct [id did due_days due_date] :from revlog :where (= did ,anki-core-current-deck-id) :order-by ROWID :asc]
                                                 :group-by id]]))))
 
+(defun anki-db-latest-due-card-or-random-card ()
+  "Get latest due card or a random card if no review logs."
+  (let* ((result (car (anki-core-sql `[:select [id did due_days (funcall min due_date)]
+                                       :from [:select *
+                                              :from [:select :distinct [id did due_days due_date] :from revlog :where (= did ,anki-core-current-deck-id) :order-by ROWID :asc]
+                                              :group-by id]])))
+         (id (nth 0 result))
+         ;; (due-days (nth 1 result))
+         (due-date (if id (encode-time (parse-time-string (nth 3 result))))))
+    (if (and id (time-less-p due-date (current-time))) ; the lastest card due-date is less than current date
+        (gethash id anki-core-hash-table)
+      (nth (random (1- (length anki-search-entries))) anki-search-entries))))
+
 (provide 'anki-db)
