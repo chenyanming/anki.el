@@ -186,7 +186,7 @@ Optional argument INDEX is the number of anki in the list."
     ;; only show question
     (anki-show-question question)
     ;; (shrface-mode)
-    (anki-play-audio))
+    )
   (setq buffer-read-only t)
   (unless (eq major-mode 'anki-mode)
     (anki-mode)))
@@ -313,7 +313,8 @@ Optional argument INDEX is the number of anki in the list."
     (anki-render-region beg end)
     ;; save card information to text-property for later anki-find-card-at-point extraction
     (put-text-property (point-min) (+ 1 (point-min) ) 'anki-entry anki-current-card)
-    (goto-char (point-min)))
+    (goto-char (point-min))
+    (anki-play-audio))
 
   ;; insert due date
   ;; (insert (concat "\n" (propertize (or (anki-learn-get-due-date id) "New Card")
@@ -337,7 +338,8 @@ Optional argument INDEX is the number of anki in the list."
     (anki-render-region beg end)
     ;; save card information to text-property for later anki-find-card-at-point extraction
     (put-text-property (point-min) (+ 1 (point-min) ) 'anki-entry anki-current-card)
-    (goto-char (point-min))))
+    (goto-char (point-min))
+    (anki-play-audio)))
 
 
 (defun anki-next ()
