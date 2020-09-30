@@ -49,6 +49,7 @@
 (defvar anki-front nil)
 (defvar anki-back nil)
 (defvar anki-mock-due-date nil)
+(defvar anki-current-card nil)
 
 (defvar anki-mode-map
   (let ((map (make-sparse-keymap)))
@@ -142,6 +143,8 @@ Optional argument INDEX is the number of anki in the list."
     (setq anki-front question)
     (setq anki-back answer)
     (setq anki-mock-due-date mock-due-date)
+    ;; save current card information to global variable
+    (setq anki-current-card item)
     ;; print the card info
     (message "Card id: %s, Due: %s, Diff: %0.2f minutes"
              id
@@ -150,8 +153,6 @@ Optional argument INDEX is the number of anki in the list."
                                 (time-convert (current-time) 'integer )) 60.0 ) 0))
     ;; only show question
     (anki-show-question question)
-    (put-text-property (point-min) (+ 1 (point-min) ) 'anki-entry item)
-    (goto-char (point-min))             ; cursor is always in the (point-min)
     ;; (shrface-mode)
     (anki-play-audio))
   (setq buffer-read-only t)
@@ -278,6 +279,8 @@ Optional argument INDEX is the number of anki in the list."
     (setq end (point))
     (put-text-property beg end 'question question)
     (anki-render-region beg end)
+    ;; save card information to text-property for later anki-find-card-at-point extraction
+    (put-text-property (point-min) (+ 1 (point-min) ) 'anki-entry anki-current-card)
     (goto-char (point-min)))
 
   ;; insert due date
@@ -300,6 +303,8 @@ Optional argument INDEX is the number of anki in the list."
     (setq end (point))
     (put-text-property beg end 'answer answer)
     (anki-render-region beg end)
+    ;; save card information to text-property for later anki-find-card-at-point extraction
+    (put-text-property (point-min) (+ 1 (point-min) ) 'anki-entry anki-current-card)
     (goto-char (point-min))))
 
 
