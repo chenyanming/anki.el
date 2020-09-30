@@ -35,6 +35,7 @@
 (require 'anki-card)
 (require 'anki-learn)
 (require 'anki-utils)
+(require 'anki-db)
 
 (defcustom anki-in-sequence t
   "Set nil random or t in sequence when enter *anki*."
@@ -50,6 +51,8 @@
 (defvar anki-back nil)
 (defvar anki-mock-due-date nil)
 (defvar anki-current-card nil)
+(defvar anki-new-card-p nil)
+(defvar anki-again-card-p nil)
 
 (defvar anki-mode-map
   (let ((map (make-sparse-keymap)))
@@ -94,9 +97,21 @@
 
 (defun anki-header ()
   "Header function for *anki* buffer."
-  (format "%s: %s  %s  %s  %s  %s  %s"
+  (format "%s: %s  %s/%s/%s  %s  %s  %s  %s  %s  %s"
           (propertize "Anki" 'face font-lock-warning-face)
           anki-core-current-deck
+          (if anki-new-card-p
+              (propertize (number-to-string (- (anki-db-current-deck-total-card-number) (anki-db-current-deck-total-review-card-number) )) 'face '(:foreground "DeepSkyBlue" :underline t))
+            (propertize (number-to-string (- (anki-db-current-deck-total-card-number) (anki-db-current-deck-total-review-card-number) )) 'face '(:foreground "DeepSkyBlue")))
+
+          (if (and anki-again-card-p (not anki-new-card-p))
+              (propertize (number-to-string (anki-db-current-deck-total-again-number)) 'face '(:foreground "OrangeRed" :underline t))
+            (propertize (number-to-string (anki-db-current-deck-total-again-number)) 'face '(:foreground "OrangeRed")))
+
+          (if (or anki-again-card-p anki-new-card-p)
+              (propertize (number-to-string (- (anki-db-current-deck-total-due-card-number) (anki-db-current-deck-total-again-number))) 'face '(:foreground "green"))
+            (propertize (number-to-string (- (anki-db-current-deck-total-due-card-number) (anki-db-current-deck-total-again-number))) 'face '(:foreground "green" :underline t)))
+
           ;; (concat (propertize "r" 'face 'bold) (if anki-in-sequence ":in sequence" ":random"))
           (concat (propertize "l" 'face 'bold) "ist")
           (concat (propertize "r" 'face 'bold) "eplay")
@@ -133,7 +148,8 @@ Optional argument INDEX is the number of anki in the list."
          (card (anki-get-card item))
          (question (nth 0 card))
          (answer (nth 1 card))
-         (due-date (anki-learn-get-due-date id))
+         (due-days (car (anki-learn-get-due-date id)))
+         (due-date (cdr (anki-learn-get-due-date id)))
          (mock-due-date (anki-learn-mock-smart-reschedule id))
          (number (or index (if anki-in-sequence
                                anki-number
@@ -151,6 +167,15 @@ Optional argument INDEX is the number of anki in the list."
              (if due-date due-date "NEW CARD")
              (if due-date (/ (- (time-convert (encode-time (parse-time-string due-date) ) 'integer)
                                 (time-convert (current-time) 'integer )) 60.0 ) 0))
+    (if due-days
+        (if (< due-days 1)
+            (setq anki-again-card-p t)
+          (setq anki-again-card-p nil))
+      (setq anki-again-card-p nil))
+    (if due-date
+        (setq anki-new-card-p nil)
+      (setq anki-new-card-p t))
+
     ;; only show question
     (anki-show-question question)
     ;; (shrface-mode)

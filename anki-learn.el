@@ -407,7 +407,8 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
 
 (defun anki-learn-get-due-date (id)
   "TODO: Get due date based on card ID."
-  (nth 5 (car (anki-core-sql `[:select [ROWID *] :from revlog :where id :like ,(concat "%%" id "%%") :order-by ROWID :desc :limit 1]))))
+  (let ((result (car (anki-core-sql `[:select [ROWID *] :from revlog :where id :like ,(concat "%%" id "%%") :order-by ROWID :desc :limit 1]))))
+    (cons (nth 4 result) (nth 5 result))))
 
 (provide 'anki-learn)
 
