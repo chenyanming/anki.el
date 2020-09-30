@@ -168,7 +168,7 @@ Optional argument INDEX is the number of anki in the list."
               (/ (- (time-convert (current-time) 'integer )
                     (time-convert (encode-time (parse-time-string due-date) ) 'integer)) (* 24 3600.0))) )
     ;; print the card info
-    (message "Card id: %s, Due: %s, Expired: %0.2f days"
+    (message "Card id: %s, Due: %s, Expired: %f days"
              id
              (if due-date due-date "NEW CARD")
              (if due-date real-due-days 0))
