@@ -154,6 +154,7 @@ Optional argument INDEX is the number of anki in the list."
          (number (or index (if anki-in-sequence
                                anki-number
                              (random (1- (length anki-search-entries))))))
+         real-due-days
          beg end)
     (setq anki-number number)
     (setq anki-front question)
@@ -161,17 +162,23 @@ Optional argument INDEX is the number of anki in the list."
     (setq anki-mock-due-date mock-due-date)
     ;; save current card information to global variable
     (setq anki-current-card item)
+    ;; cal the real due days
+    (if due-date
+        (setq real-due-days
+              (/ (- (time-convert (current-time) 'integer )
+                    (time-convert (encode-time (parse-time-string due-date) ) 'integer)) (* 24 3600.0))) )
     ;; print the card info
-    (message "Card id: %s, Due: %s, Diff: %0.2f minutes"
+    (message "Card id: %s, Due: %s, Expired: %0.2f days"
              id
              (if due-date due-date "NEW CARD")
-             (if due-date (/ (- (time-convert (encode-time (parse-time-string due-date) ) 'integer)
-                                (time-convert (current-time) 'integer )) 60.0 ) 0))
-    (if due-days
-        (if (< due-days 1)
+             (if due-date real-due-days 0))
+
+    (if real-due-days
+        (if (< real-due-days 1)
             (setq anki-again-card-p t)
           (setq anki-again-card-p nil))
       (setq anki-again-card-p nil))
+
     (if due-date
         (setq anki-new-card-p nil)
       (setq anki-new-card-p t))

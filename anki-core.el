@@ -349,7 +349,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
   "Get latest due card or a random card if no review logs."
   (let* ((result (car (anki-core-sql `[:select [id did (funcall min due_days) due_date]
                                      :from [:select *
-                                            :from [:select :distinct [id did due_days due_date] :from revlog :where (= did ,anki-core-current-deck-id) :order-by ROWID :asc]
+                                            :from [:select :distinct [id did due_days due_date] :from revlog :where (= did ,anki-core-current-deck-id) :order-by ROWID :desc]
                                             :group-by id]])))
         (id (nth 0 result))
         ;; (due-days (nth 1 result))

@@ -42,7 +42,8 @@
   (seq-count (lambda (x) (equal x t))
              (cl-mapcar (lambda (x)
                           (and (< (nth 2 x) 1); due_days is less than 1 day
-                               (time-less-p (encode-time (parse-time-string (nth 3 x))) (current-time)))) ; expired
+                               (< (/ (- (time-convert (current-time) 'integer)
+                                        (time-convert (encode-time (parse-time-string (nth 3 x))) 'integer)) (* 24 3600.0)) 1))) ; real due_days is less than 1 day
                         (anki-core-sql `[:select *
                                          :from [:select *
                                                 :from [:select :distinct [id did due_days due_date] :from revlog :where (= did ,anki-core-current-deck-id) :order-by ROWID :asc]
