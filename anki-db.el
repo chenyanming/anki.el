@@ -32,7 +32,9 @@
 (defun anki-db-current-deck-total-due-card-number ()
   (seq-count (lambda (x) (equal x t))
              (cl-mapcar (lambda (x)
-                          (time-less-p (encode-time (parse-time-string (nth 3 x))) (current-time)))
+                          (let ((real-due-day (/ (- (time-convert (current-time) 'integer)
+                                                    (time-convert (encode-time (parse-time-string (nth 3 x))) 'integer)) (* 24 3600.0))))
+                            (> real-due-day 0))) ; real due_days >0
                         (anki-core-sql `[:select *
                                          :from [:select *
                                                 :from [:select :distinct [id did due_days due_date] :from revlog :where (= did ,anki-core-current-deck-id) :order-by ROWID :asc]
@@ -41,9 +43,10 @@
 (defun anki-db-current-deck-total-again-number ()
   (seq-count (lambda (x) (equal x t))
              (cl-mapcar (lambda (x)
-                          (and (< (nth 2 x) 1); due_days is less than 1 day
-                               (< (/ (- (time-convert (current-time) 'integer)
-                                        (time-convert (encode-time (parse-time-string (nth 3 x))) 'integer)) (* 24 3600.0)) 1))) ; real due_days is less than 1 day
+                          (let ((real-due-day (/ (- (time-convert (current-time) 'integer)
+                                                    (time-convert (encode-time (parse-time-string (nth 3 x))) 'integer)) (* 24 3600.0))))
+                            (and (< real-due-day 1)
+                                 (> real-due-day 0)))) ; 0 day < real due_days < 1 day
                         (anki-core-sql `[:select *
                                          :from [:select *
                                                 :from [:select :distinct [id did due_days due_date] :from revlog :where (= did ,anki-core-current-deck-id) :order-by ROWID :asc]
