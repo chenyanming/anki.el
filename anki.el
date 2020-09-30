@@ -45,6 +45,10 @@
 (defvar anki-loop-speed 1.0)
 (defvar anki-loop-toggle nil)
 (defvar anki-header-function #'anki-header)
+(defvar anki-front-or-back t)
+(defvar anki-front nil)
+(defvar anki-back nil)
+(defvar anki-mock-due-date nil)
 
 (defvar anki-mode-map
   (let ((map (make-sparse-keymap)))
@@ -61,6 +65,7 @@
     (define-key map "3" #'anki-answer)
     (define-key map "4" #'anki-answer)
     (define-key map "5" #'anki-answer)
+    (define-key map "f" #'anki-flip-card)
     ;; (define-key map "]" #'anki-loop-inc)
     ;; (define-key map "[" #'anki-loop-dec)
     ;; (define-key map "a" #'anki-first)
@@ -96,6 +101,7 @@
           ;; (if anki-loop-toggle (concat "(+" (number-to-string anki-loop-speed) "s) ") "")
           ;; (concat (propertize "v" 'face 'bold) "alidate")
           ;; (concat (propertize "s" 'face 'bold) "ay")
+          (concat (propertize "f" 'face 'bold) "lip")
           (concat (propertize "n" 'face 'bold) "ext")
           (concat (propertize "p" 'face 'bold) "revious")
           (concat (propertize "q" 'face 'bold) "uit")
@@ -132,12 +138,37 @@ Optional argument INDEX is the number of anki in the list."
                              (random (1- (length anki-search-entries))))))
          beg end)
     (setq anki-number number)
-
+    (setq anki-front question)
+    (setq anki-back answer)
+    (setq anki-mock-due-date mock-due-date)
+    ;; print the card info
     (message "Card id: %s, Due: %s, Diff: %0.2f minutes"
              id
              (if due-date due-date "NEW CARD")
              (if due-date (/ (- (time-convert (encode-time (parse-time-string due-date) ) 'integer)
-                             (time-convert (current-time) 'integer )) 60.0 ) 0))
+                                (time-convert (current-time) 'integer )) 60.0 ) 0))
+    ;; only show question
+    (anki-show-question question)
+    (put-text-property (point-min) (+ 1 (point-min) ) 'anki-entry item)
+    (goto-char (point-min))             ; cursor is always in the (point-min)
+    ;; (shrface-mode)
+    (anki-play-audio))
+  (setq buffer-read-only t)
+  (unless (eq major-mode 'anki-mode)
+    (anki-mode)))
+
+(defun anki-flip-card ()
+  "Flip Card."
+  (interactive)
+  (let ((inhibit-read-only t))
+    (goto-char (point-min))
+    (delete-region (point) (point-max))
+    (goto-char (point-min))
+    (if anki-front-or-back
+        (anki-show-question anki-front)
+      (anki-show-answer anki-back))))
+
+(defun anki-show-buttons (mock-due-date)
     ;; insert answer button
     (let ((answer-map (make-sparse-keymap)))
       (define-key answer-map [mouse-1] 'anki-answer-mouse-1)
@@ -149,13 +180,39 @@ Optional argument INDEX is the number of anki in the list."
       ;;                             'face font-lock-warning-face
       ;;                             'mouse-face 'mode-line-highlight
       ;;                             'keymap answer-map) " " ))
+      (anki-insert-justify-text
+       (format "%s%s%s%s%s%s%s%s"
+               (propertize (format "%s" "AGAIN")
+                           'face '(:background "orange red" :height 1.5)
+                           'mouse-face 'mode-line-highlight
+                           'keymap answer-map)
+               (propertize (format " %s " (nth 0 mock-due-date))
+                           'face 'bold)
+               (propertize (format "%s"  "HARD")
+                                   'face '(:background "grey"  :height 1.5)
+                                   'mouse-face 'mode-line-highlight
+                                   'keymap answer-map)
+               (propertize (format " %s " (nth 1 mock-due-date))
+                                   'face 'bold)
+               (propertize (format "%s"  "GOOD")
+                                   'face '(:background "green"  :height 1.5)
+                                   'mouse-face 'mode-line-highlight
+                                   'keymap answer-map)
+               (propertize (format " %s " (nth 3 mock-due-date))
+                                   'face 'bold)
+               (propertize (format "%s"  "EASY")
+                                   'face '(:background "light sky blue" :height 1.5)
+                                   'mouse-face 'mode-line-highlight
+                                   'keymap answer-map)
+               (propertize (format " %s " (nth 5 mock-due-date))
+                                   'face 'bold)))
 
-      (insert (propertize (format "%s" "AGAIN")
-                          'face '(:background "orange red" :height 1.5)
-                          'mouse-face 'mode-line-highlight
-                          'keymap answer-map))
-      (insert (propertize (format " %s " (nth 0 mock-due-date))
-                          'face 'bold))
+      ;; (insert (propertize (format "%s" "AGAIN")
+      ;;                     'face '(:background "orange red" :height 1.5)
+      ;;                     'mouse-face 'mode-line-highlight
+      ;;                     'keymap answer-map))
+      ;; (insert (propertize (format " %s " (nth 0 mock-due-date))
+      ;;                     'face 'bold))
 
       ;; (insert (propertize (format "%s" "CHALLENGING")
       ;;                     'face '(:background "orange red" :height 1.5)
@@ -171,63 +228,79 @@ Optional argument INDEX is the number of anki in the list."
       ;; (insert (propertize (format " %s " (nth 1 mock-due-date))
       ;;                     'face 'bold))
 
-      (insert (propertize (format "%s"  "HARD")
-                          'face '(:background "grey"  :height 1.5)
-                          'mouse-face 'mode-line-highlight
-                          'keymap answer-map))
-      (insert (propertize (format " %s " (nth 1 mock-due-date))
-                          'face 'bold))
-      (insert (propertize (format "%s"  "GOOD")
-                          'face '(:background "green"  :height 1.5)
-                          'mouse-face 'mode-line-highlight
-                          'keymap answer-map))
-      (insert (propertize (format " %s " (nth 3 mock-due-date))
-                          'face 'bold))
-      (insert (propertize (format "%s"  "EASY")
-                          'face '(:background "light sky blue" :height 1.5)
-                          'mouse-face 'mode-line-highlight
-                          'keymap answer-map))
-      (insert (propertize (format " %s " (nth 5 mock-due-date))
-                          'face 'bold)))
+      ;; (insert (propertize (format "%s"  "HARD")
+      ;;                     'face '(:background "grey"  :height 1.5)
+      ;;                     'mouse-face 'mode-line-highlight
+      ;;                     'keymap answer-map))
+      ;; (insert (propertize (format " %s " (nth 1 mock-due-date))
+      ;;                     'face 'bold))
+      ;; (insert (propertize (format "%s"  "GOOD")
+      ;;                     'face '(:background "green"  :height 1.5)
+      ;;                     'mouse-face 'mode-line-highlight
+      ;;                     'keymap answer-map))
+      ;; (insert (propertize (format " %s " (nth 3 mock-due-date))
+      ;;                     'face 'bold))
+      ;; (insert (propertize (format "%s"  "EASY")
+      ;;                     'face '(:background "light sky blue" :height 1.5)
+      ;;                     'mouse-face 'mode-line-highlight
+      ;;                     'keymap answer-map))
+      ;; (insert (propertize (format " %s " (nth 5 mock-due-date))
+      ;;                     'face 'bold))
 
+      ))
+
+(defun anki-insert-justify-text (text)
+  (let (beg end)
     (setq beg (point))
-    (insert "<h1>Question</h1>")
+    (insert text)
+    (setq end (point))
+    (set-justification-left beg end)))
+
+(defun anki-show-answer-button ()
+  ;; insert show answer button
+  (let ((show-answer-map (make-sparse-keymap)))
+    (define-key show-answer-map [mouse-1] 'anki-show-answer-mouse-1)
+    (anki-insert-justify-text (concat (propertize "SHOW ANSWER"
+                                'face '(:background "grey" :height 1.5)
+                                'mouse-face 'mode-line-highlight
+                                'keymap show-answer-map) " " ))))
+
+
+(defun anki-show-question (question)
+  (setq anki-front-or-back nil)
+  (let (beg end)
+    (anki-show-answer-button)
+    (setq beg (point))
+    ;; (insert "<h1>Question</h1>")
+    (insert "<hr>")
     (insert question)
     (setq end (point))
     (put-text-property beg end 'question question)
     (anki-render-region beg end)
+    (goto-char (point-min)))
 
-    ;; insert due date
-    ;; (insert (concat "\n" (propertize (or (anki-learn-get-due-date id) "New Card")
-    ;;                             'face font-lock-keyword-face
-    ;;                             'mouse-face 'mode-line-highlight) "\n"))
+  ;; insert due date
+  ;; (insert (concat "\n" (propertize (or (anki-learn-get-due-date id) "New Card")
+  ;;                             'face font-lock-keyword-face
+  ;;                             'mouse-face 'mode-line-highlight) "\n"))
 
-    (insert "\n\n")
-    ;; insert show answer button
-    (let ((show-answer-map (make-sparse-keymap)))
-      (define-key show-answer-map [mouse-1] 'anki-show-answer-mouse-1)
-      (insert (concat (propertize "SHOW ANSWER"
-                                  'face '(:background "grey" :height 1.5)
-                                  'mouse-face 'mode-line-highlight
-                                  'keymap show-answer-map) " " )))
+  )
+
+(defun anki-show-answer (answer)
+  (setq anki-front-or-back t)
+  (let (beg end)
+    ;; show button
+    (anki-show-buttons anki-mock-due-date)
 
     (setq beg (point))
-    (insert "<h1>Answer</h1>")
+    ;; (insert "<h1>Answer</h1>")
+    (insert "<hr>")
     (insert answer)
     (setq end (point))
     (put-text-property beg end 'answer answer)
     (anki-render-region beg end)
+    (goto-char (point-min))))
 
-    ;; (anki-render-html)
-
-    (put-text-property (point-min) (+ 1 (point-min) ) 'anki-entry item)
-
-    (goto-char (point-min))             ; cursor is always in the (point-min)
-    ;; (shrface-mode)
-    (anki-play-audio))
-  (setq buffer-read-only t)
-  (unless (eq major-mode 'anki-mode)
-    (anki-mode)))
 
 (defun anki-next ()
   "Next anki."
@@ -300,7 +373,7 @@ Argument EVENT mouse event."
         (error "No tag chosen"))
     (with-current-buffer (window-buffer window)
       (goto-char pos)
-      (message "ANSWER BUTTON IS IN TODO LIST."))))
+      (anki-flip-card))))
 
 ;;;###autoload
 (defun anki-list-decks ()
