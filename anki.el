@@ -66,6 +66,7 @@
     (define-key map "4" #'anki-answer)
     (define-key map "5" #'anki-answer)
     (define-key map "f" #'anki-flip-card)
+    (define-key map (kbd "<RET>") #'anki-flip-card)
     ;; (define-key map "]" #'anki-loop-inc)
     ;; (define-key map "[" #'anki-loop-dec)
     ;; (define-key map "a" #'anki-first)
