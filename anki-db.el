@@ -74,4 +74,8 @@
            (gethash (nth (random (1- (length (anki-db-current-deck-all-new-card-ids)))) (anki-db-current-deck-all-new-card-ids)) anki-core-hash-table))
           (t (nth (random (1- (length anki-search-entries))) anki-search-entries)))))  ; real due_days < 0                      ; real due_days < 0
 
+(defun anki-db-current-deck-reschedule ()
+  (interactive)
+  (anki-core-sql `[:delete :from revlog :where (= did ,anki-core-current-deck-id)]))
+
 (provide 'anki-db)
