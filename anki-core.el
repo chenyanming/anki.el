@@ -384,4 +384,70 @@ Argument QUERY-RESULT is the query result generate by sqlite."
   ;; TODO
   )
 
+(defun anki-core-audio-collect ()
+  "Collect the positions of visible links in the current `anki-card' buffer."
+  (save-excursion
+    (with-current-buffer (or (get-buffer "*anki-card*") (get-buffer "*anki*"))
+      (goto-char (point-min))
+      (let (beg end string url collected-list)
+        (setq end
+              (if (get-text-property (point) 'shr-url)
+                  (point)
+                (text-property-any
+                 (point) (point-max) 'shr-url nil)))
+        (while (setq beg (text-property-not-all
+                          end (point-max) 'shr-url nil))
+          (goto-char beg)
+          (setq url (get-text-property beg 'shr-url))
+          (setq beg (point))
+          ;; Extract the current point text properties if it matched by giving
+          ;; property `face', and insert it to `buf-name'
+          (if (get-text-property (point) 'shr-url)
+              (progn
+                (setq end (next-single-property-change (point) 'shr-url nil (point-max)))
+                ;; When link at the end of buffer, end will be set to nil.
+                (if (not end)
+                    (setq end (point-max)))
+
+                (setq string (buffer-substring-no-properties beg end)) ; save the url title
+                ;; only collect media files
+                (if (string-match-p "\\.\\(mp3\\|wav\\|m4a\\|mp4\\)$" url)
+                    (push (list string url beg end) collected-list)))))
+        (nreverse collected-list)))))
+
+(defun anki-play-audio ()
+  "Collect and play the audio in current buffer"
+  (interactive)
+  (let ((process (get-process "anki-audio-player")))
+    (if (process-live-p process)
+        (delete-process process)))
+  ;; TODO: Play more than 1 audio
+  (let ((sound (nth 1 (car (anki-core-audio-collect)))))
+    (when sound
+      (message "Playing...")
+      (if (and anki-audio-player sound)
+          (start-process-shell-command
+           "anki-audio-player" nil
+           (mapconcat 'identity
+                      `(,anki-audio-player
+                        ,@(delq nil (list (shell-quote-argument (expand-file-name sound))))) " "))))))
+
+(defun anki-replay-audio ()
+  "Replay Audio If Possible."
+  (interactive)
+  (let ((process (get-process "anki-audio-player")))
+    (if (process-live-p process)
+        (delete-process process)))
+  (cond
+   ;; if there is *anki-card* buffer
+   ((get-buffer "*anki-card*")
+    (anki-play-audio))
+   ;; if no *anki-card* buffer
+   ((equal major-mode 'anki-search-mode)
+    (funcall 'anki-preview-card)
+    (anki-play-audio))
+   ;; if in *anki-card* buffer
+   ((equal major-mode 'anki-card-mode)
+    (anki-play-audio))))
+
 (provide 'anki-core)
