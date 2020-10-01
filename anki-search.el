@@ -252,37 +252,4 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
   (anki-search-previous-card)
   (anki-show-card (anki-core-find-card-at-point) :switch))
 
-(defun anki-export-org ()
-  "TODO: Export the currnet deck to a org file.
-You can use it with org-drill."
-  (interactive)
-  (with-temp-file (concat (file-name-as-directory anki-collection-dir) "export.org")
-    (insert (format "<h1>%s</h1>" anki-core-current-deck))
-    (dolist (item anki-search-entries)
-      (when (hash-table-p item)
-        (let* ((card (anki-get-card item))
-               (question (nth 0 card))
-               (answer (nth 1 card)))
-          (insert (format
-                   "<h2>Question :drill: </h2>%s<h3>Answer</h3>%s"
-                   question
-                   answer)))))
-    (anki-render-org)))
-
-(defun anki-export-html ()
-  "TODO: Export the currnet deck to a html file."
-  (interactive)
-  (with-temp-file (concat (file-name-as-directory anki-collection-dir) "export.html")
-    (insert "<html><body>")
-    (insert (format "<h1>%s</h1>" anki-core-current-deck))
-    (dolist (item anki-search-entries)
-      (when (hash-table-p item)
-        (let* ((card (anki-get-card item))
-               (question (nth 0 card))
-               (answer (nth 1 card)))
-          (insert (format
-                   "<h2>Question</h2>%s<h3>Answer</h3>%s"
-                   question
-                   answer)))))))
-
 (provide 'anki-search)
