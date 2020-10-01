@@ -25,7 +25,7 @@
 (eval-when-compile
   (require 'cl-lib))
 
-(defvar initial-repetition-state '(-1 1 2.5 nil))
+(defvar anki-learn-initial-repetition-state '(-1 1 2.5 nil))
 
 (defvar anki-learn-spaced-repetition-algorithm-function #'anki-learn-determine-next-interval-sm2)
 
@@ -88,19 +88,19 @@ It determines the SM2 the first and second interval."
   :group 'anki
   :type 'float)
 
-(defun initial-optimal-factor (n ef)
+(defun anki-learn-initial-optimal-factor (n ef)
   (if (= 1 n)
       anki-learn-sm5-initial-interval
     ef))
 
-(defun get-optimal-factor (n ef of-matrix)
+(defun anki-learn-get-optimal-factor (n ef of-matrix)
   (let ((factors (assoc n of-matrix)))
     (or (and factors
              (let ((ef-of (assoc ef (cdr factors))))
                (and ef-of (cdr ef-of))))
-        (initial-optimal-factor n ef))))
+        (anki-learn-initial-optimal-factor n ef))))
 
-(defun set-optimal-factor (n ef of-matrix of)
+(defun anki-learn-set-optimal-factor (n ef of-matrix of)
   (let ((factors (assoc n of-matrix)))
     (if factors
         (let ((ef-of (assoc ef (cdr factors))))
@@ -110,13 +110,13 @@ It determines the SM2 the first and second interval."
       (push (cons n (list (cons ef of))) of-matrix)))
   of-matrix)
 
-(defun inter-repetition-interval (last-interval n ef &optional of-matrix)
-  (let ((of (get-optimal-factor n ef of-matrix)))
+(defun anki-learn-inter-repetition-interval (last-interval n ef &optional of-matrix)
+  (let ((of (anki-learn-get-optimal-factor n ef of-matrix)))
     (if (= 1 n)
         of
       (* of last-interval))))
 
-(defun modify-e-factor (ef quality)
+(defun anki-learn-modify-e-factor (ef quality)
   "EF: Efactor, QUALITY: 0-5.
 5. After each repetition modify the E-Factor of the recently repeated item according to the formula:
 EF':=EF+(0.1-(5-q)*(0.08+(5-q)*0.02))
@@ -129,7 +129,7 @@ If EF is less than 1.3 then let EF be 1.3."
       1.3
     (+ ef (- 0.1 (* (- 5 quality) (+ 0.08 (* (- 5 quality) 0.02)))))))
 
-(defun modify-of (of q fraction)
+(defun anki-learn-modify-of (of q fraction)
   (let ((temp (* of (+ 0.72 (* q 0.07)))))
     (+ (* (- 1 fraction) of) (* fraction temp))))
 
@@ -146,12 +146,12 @@ Example: (round-float 3.56755765 3) -> 3.568"
   (cl-assert (> n 0))
   (cl-assert (and (>= quality 0) (<= quality 5)))
   (setq of-matrix (copy-tree of-matrix))
-  (let ((next-ef (modify-e-factor ef quality))
+  (let ((next-ef (anki-learn-modify-e-factor ef quality))
         (old-ef ef)
-        (new-of (modify-of (get-optimal-factor n ef of-matrix)
+        (new-of (anki-learn-modify-of (anki-learn-get-optimal-factor n ef of-matrix)
                            quality anki-learn-fraction)))
     (setq of-matrix
-          (set-optimal-factor n next-ef of-matrix
+          (anki-learn-set-optimal-factor n next-ef of-matrix
                               (anki-learn-round-float new-of 3))) ; round OF to 3 d.p.
     (setq ef next-ef)
     ;; For a zero-based quality of 4 or 5, don't repeat
@@ -160,7 +160,7 @@ Example: (round-float 3.56755765 3) -> 3.568"
       (list -1 1 old-ef of-matrix)) ; Not clear if OF matrix is supposed to be
                                         ; preserved
      (t
-      (list (inter-repetition-interval last-interval n ef of-matrix)
+      (list (anki-learn-inter-repetition-interval last-interval n ef of-matrix)
             (1+ n)
             ef
             of-matrix)))))
@@ -171,7 +171,7 @@ Example: (round-float 3.56755765 3) -> 3.568"
 ;;   (let* ((learn-str (org-entry-get (point) "LEARN_DATA"))
 ;; 	 (learn-data (or (and learn-str
 ;; 			      (read learn-str))
-;; 			 (copy-list initial-repetition-state)))
+;; 			 (copy-list anki-learn-initial-repetition-state)))
 ;; 	 closed-dates)
 ;;     (setq learn-data
 ;; 	  (determine-next-interval (nth 1 learn-data)
@@ -346,7 +346,7 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
       (cond ((= quality 0) (list (/ 1 (* 24 60.0)) 1 ef of-matrix)) ; set to 1 minute
             ((= quality 1) (list (/ anki-learn-sm2-steps (* 24 60.0)) 1 ef of-matrix)) ; set to 10 minutes
             ((= quality 2) (list (/ anki-learn-sm2-more-steps (* 24 60.0)) 1 ef of-matrix)))  ; set to 30 minutes
-    (let* ((next-ef (modify-e-factor ef quality))
+    (let* ((next-ef (anki-learn-modify-e-factor ef quality))
            ;;3. Repeat items using the following intervals:
            ;; I(1):=1
            ;; I(2):=6
@@ -391,7 +391,7 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
   (let ((due-data (nth 3 (car (anki-core-sql `[:select [ROWID *] :from revlog :where id :like ,(concat "%%" id "%%") :order-by ROWID :desc :limit 1])))))
     (if due-data
         due-data
-      (copy-list initial-repetition-state))))
+      (copy-list anki-learn-initial-repetition-state))))
 
 (defun anki-learn-get-due-date (id)
   "TODO: Get due date based on card ID."
