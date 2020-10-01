@@ -40,12 +40,6 @@ time."
   :group 'anki
   :type 'string)
 
-(defvar anki-search-entries nil
-  "List of the entries currently on display.")
-
-(defvar anki-full-entries nil
-  "List of the all entries currently on library.")
-
 (defvar anki-search-header-function #'anki-search-header
   "Function that returns the string to be used for the Calibredb search header.")
 
@@ -57,18 +51,18 @@ time."
     (define-key map "b" #'anki-preview-back)
     (define-key map "F" #'anki-preview-front-on-browser)
     (define-key map "B" #'anki-preview-back-on-browser)
-    (define-key map "j" #'anki-next-card)
-    (define-key map "k" #'anki-previous-card)
+    (define-key map "j" #'anki-search-next-card)
+    (define-key map "k" #'anki-search-previous-card)
     (define-key map "l" #'anki-list-decks)
     ;; (define-key map "n" #'anki-next-deck)
     ;; (define-key map "p" #'anki-previous-deck)
     (define-key map "r" #'anki-replay-audio)
     (define-key map "u" #'anki-search-update)
     (define-key map "q" #'anki-search-quit)
-    (define-key map "j" #'anki-next-card)
-    (define-key map "k" #'anki-previous-card)
-    (define-key map "\M-j" #'anki-preview-next-card)
-    (define-key map "\M-k" #'anki-preview-previous-card)
+    (define-key map "j" #'anki-search-next-card)
+    (define-key map "k" #'anki-search-previous-card)
+    (define-key map "\M-j" #'anki-search-preview-next-card)
+    (define-key map "\M-k" #'anki-search-preview-previous-card)
     map)
   "Keymap for `anki-search-mode'.")
 
@@ -223,7 +217,7 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
   (setq anki-full-entries anki-search-entries)
   (anki-browser))
 
-(defun anki-next-card ()
+(defun anki-search-next-card ()
   "Move to next card."
   (interactive)
   (forward-line 1)
@@ -234,7 +228,7 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
   ;;     (setq new (gethash 'id (anki-find-card-at-point)))))
   )
 
-(defun anki-previous-card ()
+(defun anki-search-previous-card ()
   (interactive)
   (forward-line -1)
   ;; (let ((ori "") (new ""))
@@ -246,16 +240,16 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
   ;;       (setq new (gethash 'id (anki-find-card-at-point))))))
   )
 
-(defun anki-preview-next-card ()
+(defun anki-search-preview-next-card ()
   "Preview next card."
   (interactive)
-  (anki-next-card)
+  (anki-search-next-card)
   (anki-show-card (anki-find-card-at-point) :switch))
 
-(defun anki-preview-previous-card ()
+(defun anki-search-preview-previous-card ()
   "Preview previous card."
   (interactive)
-  (anki-previous-card)
+  (anki-search-previous-card)
   (anki-show-card (anki-find-card-at-point) :switch))
 
 (defun anki-export-org ()

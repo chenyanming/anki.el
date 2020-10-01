@@ -54,6 +54,12 @@
 (defvar anki-new-card-p nil)
 (defvar anki-again-card-p nil)
 
+(defvar anki-search-entries nil
+  "List of the entries currently on display.")
+
+(defvar anki-full-entries nil
+  "List of the all entries currently on library.")
+
 (defvar anki-mode-map
   (let ((map (make-sparse-keymap)))
     ;; (define-key map "v" #'anki-validate)
