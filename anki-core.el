@@ -366,4 +366,22 @@ Argument QUERY-RESULT is the query result generate by sqlite."
           (get-text-property (point) 'anki-compact nil))
     (get-text-property (point-min) 'anki-entry nil)))
 
+(defun anki-decode-milliseconds (input)
+  ;; TODO: Decrease the decoding time.
+  (if input
+      (format-time-string "%Y-%m-%d %a %H:%M:%S"
+                          (seconds-to-time
+                           (/ (string-to-number input) 1000))) ))
+
+(defun anki-decode-seconds (input)
+  ;; TODO: Decrease the decoding time.
+  (if input
+      (format-time-string "%Y-%m-%d %a %H:%M:%S"
+                          (seconds-to-time (string-to-number input))) ))
+
+
+(defun anki-decode-days (input)
+  ;; TODO
+  )
+
 (provide 'anki-core)

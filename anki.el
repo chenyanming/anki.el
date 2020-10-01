@@ -34,7 +34,6 @@
 (require 'anki-search)
 (require 'anki-card)
 (require 'anki-learn)
-(require 'anki-utils)
 (require 'anki-db)
 
 (defcustom anki-in-sequence t
