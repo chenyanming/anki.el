@@ -54,12 +54,12 @@ ON cards.nid = notes.id "
 (defvar anki-core-query-models "SELECT models FROM col"
   "TODO anki database query models statement.")
 
-(defcustom anki-sql-separator "\3"
+(defcustom anki-core-sql-separator "\3"
   "SQL separator, used in parsing SQL result into list."
   :group 'anki
   :type 'string)
 
-(defcustom anki-sql-newline "\2"
+(defcustom anki-core-sql-newline "\2"
   "SQL newline, used in parsing SQL result into list."
   :group 'anki
   :type 'string)
@@ -176,8 +176,8 @@ Argument SQL-QUERY is the sqlite sql query string."
                              (shell-quote-argument (expand-file-name file))
                              (shell-quote-argument (expand-file-name temp))
                              sql-sqlite-program
-                             anki-sql-separator
-                             anki-sql-newline
+                             anki-core-sql-separator
+                             anki-core-sql-newline
                              (shell-quote-argument (expand-file-name temp))
                              sql-query)))
             (shell-command-to-string cmd))) nil)))
@@ -203,7 +203,7 @@ Argument SQL-QUERY is the sqlite sql query string."
 (defun anki-core-parse-cards ()
   "Parse cards."
   (let* ((query-result (anki-core-query anki-core-query-cards))
-         (lines (if query-result (split-string query-result anki-sql-newline))))
+         (lines (if query-result (split-string query-result anki-core-sql-newline))))
     (anki-core-parse-models)            ; parse models
     (anki-core-parse-decks)             ; parse decks
     (cond ((equal "" query-result) '(""))
@@ -218,7 +218,7 @@ Argument SQL-QUERY is the sqlite sql query string."
 Argument QUERY-RESULT is the query result generate by sqlite."
   (let ((card-hash-table (make-hash-table :test 'equal)))
     (if query-result
-        (let ((spl-query-result (split-string query-result anki-sql-separator)))
+        (let ((spl-query-result (split-string query-result anki-core-sql-separator)))
           (puthash 'id              (nth 0 spl-query-result) card-hash-table )
           (puthash 'nid            (nth 1 spl-query-result) card-hash-table )
           ;; (puthash 'did            (anki-core-get-deck (nth 2 spl-query-result) decks) card-hash-table)
@@ -306,7 +306,7 @@ Argument QUERY-RESULT is the query result generate by sqlite."
     (cond ((equal type "0")             ; new
            (concat "New #" due))
           ((equal type "1")             ; learning
-           (anki-decode-seconds due))
+           (anki-core-decode-seconds due))
           ((equal type "2")             ; review
            (concat "Review #" due))
           ((equal type "3")             ; relearning
@@ -366,21 +366,21 @@ Argument QUERY-RESULT is the query result generate by sqlite."
           (get-text-property (point) 'anki-compact nil))
     (get-text-property (point-min) 'anki-entry nil)))
 
-(defun anki-decode-milliseconds (input)
+(defun anki-core-decode-milliseconds (input)
   ;; TODO: Decrease the decoding time.
   (if input
       (format-time-string "%Y-%m-%d %a %H:%M:%S"
                           (seconds-to-time
                            (/ (string-to-number input) 1000))) ))
 
-(defun anki-decode-seconds (input)
+(defun anki-core-decode-seconds (input)
   ;; TODO: Decrease the decoding time.
   (if input
       (format-time-string "%Y-%m-%d %a %H:%M:%S"
                           (seconds-to-time (string-to-number input))) ))
 
 
-(defun anki-decode-days (input)
+(defun anki-core-decode-days (input)
   ;; TODO
   )
 

@@ -42,12 +42,12 @@
   "Builds alist out of a full `anki-core-query' query record result.
 Argument QUERY-RESULT is the query result generate by sqlite."
   (if query-result
-      (let ((spl-query-result (split-string query-result anki-sql-separator)))
-        `(:id              ,(anki-decode-milliseconds (nth 0 spl-query-result))
+      (let ((spl-query-result (split-string query-result anki-core-sql-separator)))
+        `(:id              ,(anki-core-decode-milliseconds (nth 0 spl-query-result))
           :nid            ,(nth 1 spl-query-result)
           :did            ,(anki-core-get-deck (nth 2 spl-query-result) decks)
           :ord            ,(nth 3 spl-query-result)
-          :mod            ,(anki-decode-seconds (nth 4 spl-query-result))
+          :mod            ,(anki-core-decode-seconds (nth 4 spl-query-result))
           :usn            ,(nth 5 spl-query-result)
           :type            ,(nth 6 spl-query-result)
           :queue            ,(nth 7 spl-query-result)
