@@ -345,5 +345,25 @@ Argument QUERY-RESULT is the query result generate by sqlite."
       (goto-char (point-min))
       (set symbol (read (current-buffer))))))
 
+(defun anki-core-find-card-id-at-point ()
+  "TODO: "
+  (let ((card (anki-core-find-card-at-point)))
+    (if (hash-table-p card)
+        (gethash 'id card))))
+
+(defun anki-core-find-card-deck-id-at-point ()
+  "TODO: "
+  (let ((card (anki-core-find-card-at-point)))
+    (if (hash-table-p card)
+        (gethash "id" (anki-core-get-deck (gethash 'did card))))))
+
+(defun anki-core-find-card-at-point ()
+  "Find card at point and return the list."
+  (interactive)
+  (if (eq major-mode 'anki-search-mode)
+      (or (get-text-property (point) 'anki-entry nil)
+          (get-text-property (point) 'anki-detail nil)
+          (get-text-property (point) 'anki-compact nil))
+    (get-text-property (point-min) 'anki-entry nil)))
 
 (provide 'anki-core)

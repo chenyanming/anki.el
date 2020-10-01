@@ -223,9 +223,9 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
   (forward-line 1)
   ;; (let ((ori "") (new ""))
   ;;   (while (and (equal new ori) new ori)
-  ;;     (setq ori (gethash 'id (anki-find-card-at-point)))
+  ;;     (setq ori (gethash 'id (anki-core-find-card-at-point)))
   ;;     (forward-line 1)
-  ;;     (setq new (gethash 'id (anki-find-card-at-point)))))
+  ;;     (setq new (gethash 'id (anki-core-find-card-at-point)))))
   )
 
 (defun anki-search-previous-card ()
@@ -235,22 +235,22 @@ When FORCE is non-nil, redraw even when the database hasn't changed."
   ;;   (while (and (equal new ori) new ori (> (line-number-at-pos) 1))
   ;;     (forward-line -1)
   ;;     (save-excursion
-  ;;       (setq ori (gethash 'id (anki-find-card-at-point)))
+  ;;       (setq ori (gethash 'id (anki-core-find-card-at-point)))
   ;;       (forward-line -1)
-  ;;       (setq new (gethash 'id (anki-find-card-at-point))))))
+  ;;       (setq new (gethash 'id (anki-core-find-card-at-point))))))
   )
 
 (defun anki-search-preview-next-card ()
   "Preview next card."
   (interactive)
   (anki-search-next-card)
-  (anki-show-card (anki-find-card-at-point) :switch))
+  (anki-show-card (anki-core-find-card-at-point) :switch))
 
 (defun anki-search-preview-previous-card ()
   "Preview previous card."
   (interactive)
   (anki-search-previous-card)
-  (anki-show-card (anki-find-card-at-point) :switch))
+  (anki-show-card (anki-core-find-card-at-point) :switch))
 
 (defun anki-export-org ()
   "TODO: Export the currnet deck to a org file.

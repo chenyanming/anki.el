@@ -257,12 +257,12 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
 
 (defun anki-preview-front ()
   (interactive)
-  (anki-show-front (anki-find-card-at-point) :switch)
+  (anki-show-front (anki-core-find-card-at-point) :switch)
   (anki-play-audio))
 
 (defun anki-preview-front-on-browser ()
   (interactive)
-  (anki-show-front (anki-find-card-at-point) :browser)
+  (anki-show-front (anki-core-find-card-at-point) :browser)
   (anki-play-audio))
 
 (defun anki-get-card (entry)
@@ -376,12 +376,12 @@ Optional argument SWITCH to switch to *anki-search* buffer to other window."
 
 (defun anki-preview-back ()
   (interactive)
-  (anki-show-back (anki-find-card-at-point) :switch)
+  (anki-show-back (anki-core-find-card-at-point) :switch)
   (anki-play-audio))
 
 (defun anki-preview-back-on-browser ()
   (interactive)
-  (anki-show-back (anki-find-card-at-point) :browser)
+  (anki-show-back (anki-core-find-card-at-point) :browser)
   (anki-play-audio))
 
 (defun anki-field-replace-basic (mf cf &optional question)
@@ -596,7 +596,7 @@ This function honors `shr-max-image-proportion' if possible."
 
 (defun anki-preview-card ()
   (interactive)
-  (anki-show-card (anki-find-card-at-point) :switch)
+  (anki-show-card (anki-core-find-card-at-point) :switch)
   (anki-play-audio))
 
 (defun anki-models-names (model)

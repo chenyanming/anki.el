@@ -187,8 +187,8 @@ Example: (round-float 3.56755765 3) -> 3.568"
 (defun anki-learn-smart-reschedule (quality)
   "Schedule the next learn data based on QUALITY."
   (interactive "nHow well did you remember the information (on a scale of 0-5)? ")
-  (let* ((id (anki-find-card-id-at-point))
-         (did (anki-find-card-deck-id-at-point))
+  (let* ((id (anki-core-find-card-id-at-point))
+         (did (anki-core-find-card-deck-id-at-point))
          (learn-data (anki-learn-get-learn-data id))
          due-days
          due-date)
@@ -220,7 +220,7 @@ Example: (round-float 3.56755765 3) -> 3.568"
 
 (defun anki-learn-mock-smart-reschedule (&optional id)
   "TODO: Get mock due dates for all quality based on ID."
-  (let* ((id (or id (anki-find-card-id-at-point)))
+  (let* ((id (or id (anki-core-find-card-id-at-point)))
          (learn-data (anki-learn-get-learn-data id))
          next-learn-data)
     ;; next interval - learn data
@@ -381,18 +381,6 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
             (1+ n)
             next-ef
             of-matrix))))
-
-(defun anki-find-card-id-at-point ()
-  "TODO: "
-  (let ((card (anki-find-card-at-point)))
-    (if (hash-table-p card)
-        (gethash 'id card))))
-
-(defun anki-find-card-deck-id-at-point ()
-  "TODO: "
-  (let ((card (anki-find-card-at-point)))
-    (if (hash-table-p card)
-        (gethash "id" (anki-core-get-deck (gethash 'did card))))))
 
 (defun anki-learn-get-card (id)
   "TODO: Get card based on card id."

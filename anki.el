@@ -317,7 +317,7 @@ Optional argument INDEX is the number of anki in the list."
     (setq end (point))
     (put-text-property beg end 'question question)
     (anki-render-region beg end)
-    ;; save card information to text-property for later anki-find-card-at-point extraction
+    ;; save card information to text-property for later anki-core-find-card-at-point extraction
     (put-text-property (point-min) (+ 1 (point-min) ) 'anki-entry anki-current-card)
     (goto-char (point-min))
     (anki-play-audio))
@@ -342,7 +342,7 @@ Optional argument INDEX is the number of anki in the list."
     (setq end (point))
     (put-text-property beg end 'answer answer)
     (anki-render-region beg end)
-    ;; save card information to text-property for later anki-find-card-at-point extraction
+    ;; save card information to text-property for later anki-core-find-card-at-point extraction
     (put-text-property (point-min) (+ 1 (point-min) ) 'anki-entry anki-current-card)
     (goto-char (point-min))
     (anki-play-audio)))
