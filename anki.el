@@ -40,6 +40,12 @@
   "Set nil random or t in sequence when enter *anki*."
   :group 'anki
   :type 'boolean)
+
+(defcustom anki-button-size 1.0
+  "The button size, SHOW ANSWER, AGAIN, HARD, GOOD, EASY."
+  :group 'anki
+  :type 'float)
+
 (defvar anki-number 0)
 (defvar anki-last-number 0)
 (defvar anki-loop-speed 1.0)
@@ -205,65 +211,65 @@ Optional argument INDEX is the number of anki in the list."
       (anki-insert-justify-text
        (format "%s%s%s%s%s%s%s%s"
                (propertize (format "%s" "AGAIN")
-                           'face '(:background "orange red" :height 1.5)
+                           'face '(:background "orange red" :height anki-button-size)
                            'mouse-face 'mode-line-highlight
                            'keymap answer-map)
                (propertize (format " %s " (nth 0 mock-due-date))
                            'face 'bold)
                (propertize (format "%s"  "HARD")
-                                   'face '(:background "grey"  :height 1.5)
+                                   'face '(:background "grey"  :height anki-button-size)
                                    'mouse-face 'mode-line-highlight
                                    'keymap answer-map)
                (propertize (format " %s " (nth 1 mock-due-date))
                                    'face 'bold)
                (propertize (format "%s"  "GOOD")
-                                   'face '(:background "green"  :height 1.5)
+                                   'face '(:background "green"  :height anki-button-size)
                                    'mouse-face 'mode-line-highlight
                                    'keymap answer-map)
                (propertize (format " %s " (nth 3 mock-due-date))
                                    'face 'bold)
                (propertize (format "%s"  "EASY")
-                                   'face '(:background "light sky blue" :height 1.5)
+                                   'face '(:background "light sky blue" :height anki-button-size)
                                    'mouse-face 'mode-line-highlight
                                    'keymap answer-map)
                (propertize (format " %s " (nth 5 mock-due-date))
                                    'face 'bold)))
 
       ;; (insert (propertize (format "%s" "AGAIN")
-      ;;                     'face '(:background "orange red" :height 1.5)
+      ;;                     'face '(:background "orange red" :height anki-button-size)
       ;;                     'mouse-face 'mode-line-highlight
       ;;                     'keymap answer-map))
       ;; (insert (propertize (format " %s " (nth 0 mock-due-date))
       ;;                     'face 'bold))
 
       ;; (insert (propertize (format "%s" "CHALLENGING")
-      ;;                     'face '(:background "orange red" :height 1.5)
+      ;;                     'face '(:background "orange red" :height anki-button-size)
       ;;                     'mouse-face 'mode-line-highlight
       ;;                     'keymap answer-map))
       ;; (insert (propertize (format " %s " (nth 1 mock-due-date))
       ;;                     'face 'bold))
 
       ;; (insert (propertize (format "%s" "DIFFICULT")
-      ;;                     'face '(:background "orange red" :height 1.5)
+      ;;                     'face '(:background "orange red" :height anki-button-size)
       ;;                     'mouse-face 'mode-line-highlight
       ;;                     'keymap answer-map))
       ;; (insert (propertize (format " %s " (nth 1 mock-due-date))
       ;;                     'face 'bold))
 
       ;; (insert (propertize (format "%s"  "HARD")
-      ;;                     'face '(:background "grey"  :height 1.5)
+      ;;                     'face '(:background "grey"  :height anki-button-size)
       ;;                     'mouse-face 'mode-line-highlight
       ;;                     'keymap answer-map))
       ;; (insert (propertize (format " %s " (nth 1 mock-due-date))
       ;;                     'face 'bold))
       ;; (insert (propertize (format "%s"  "GOOD")
-      ;;                     'face '(:background "green"  :height 1.5)
+      ;;                     'face '(:background "green"  :height anki-button-size)
       ;;                     'mouse-face 'mode-line-highlight
       ;;                     'keymap answer-map))
       ;; (insert (propertize (format " %s " (nth 3 mock-due-date))
       ;;                     'face 'bold))
       ;; (insert (propertize (format "%s"  "EASY")
-      ;;                     'face '(:background "light sky blue" :height 1.5)
+      ;;                     'face '(:background "light sky blue" :height anki-button-size)
       ;;                     'mouse-face 'mode-line-highlight
       ;;                     'keymap answer-map))
       ;; (insert (propertize (format " %s " (nth 5 mock-due-date))
@@ -283,7 +289,7 @@ Optional argument INDEX is the number of anki in the list."
   (let ((show-answer-map (make-sparse-keymap)))
     (define-key show-answer-map [mouse-1] 'anki-show-answer-mouse-1)
     (anki-insert-justify-text (concat (propertize "SHOW ANSWER"
-                                'face '(:background "grey" :height 1.5)
+                                'face '(:background "grey" :height anki-button-size)
                                 'mouse-face 'mode-line-highlight
                                 'keymap show-answer-map) " " ))))
 
