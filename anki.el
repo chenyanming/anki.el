@@ -211,65 +211,65 @@ Optional argument INDEX is the number of anki in the list."
       (anki-insert-justify-text
        (format "%s%s%s%s%s%s%s%s"
                (propertize (format "%s" "AGAIN")
-                           'face '(:background "orange red" :height anki-button-size)
+                           'face `(:background "orange red" :height ,anki-button-size)
                            'mouse-face 'mode-line-highlight
                            'keymap answer-map)
                (propertize (format " %s " (nth 0 mock-due-date))
                            'face 'bold)
                (propertize (format "%s"  "HARD")
-                                   'face '(:background "grey"  :height anki-button-size)
+                                   'face `(:background "grey"  :height ,anki-button-size)
                                    'mouse-face 'mode-line-highlight
                                    'keymap answer-map)
                (propertize (format " %s " (nth 1 mock-due-date))
                                    'face 'bold)
                (propertize (format "%s"  "GOOD")
-                                   'face '(:background "green"  :height anki-button-size)
+                                   'face `(:background "green"  :height ,anki-button-size)
                                    'mouse-face 'mode-line-highlight
                                    'keymap answer-map)
                (propertize (format " %s " (nth 3 mock-due-date))
                                    'face 'bold)
                (propertize (format "%s"  "EASY")
-                                   'face '(:background "light sky blue" :height anki-button-size)
+                                   'face `(:background "light sky blue" :height ,anki-button-size)
                                    'mouse-face 'mode-line-highlight
                                    'keymap answer-map)
                (propertize (format " %s " (nth 5 mock-due-date))
                                    'face 'bold)))
 
       ;; (insert (propertize (format "%s" "AGAIN")
-      ;;                     'face '(:background "orange red" :height anki-button-size)
+      ;;                     'face `(:background "orange red" :height ,anki-button-size)
       ;;                     'mouse-face 'mode-line-highlight
       ;;                     'keymap answer-map))
       ;; (insert (propertize (format " %s " (nth 0 mock-due-date))
       ;;                     'face 'bold))
 
       ;; (insert (propertize (format "%s" "CHALLENGING")
-      ;;                     'face '(:background "orange red" :height anki-button-size)
+      ;;                     'face `(:background "orange red" :height ,anki-button-size)
       ;;                     'mouse-face 'mode-line-highlight
       ;;                     'keymap answer-map))
       ;; (insert (propertize (format " %s " (nth 1 mock-due-date))
       ;;                     'face 'bold))
 
       ;; (insert (propertize (format "%s" "DIFFICULT")
-      ;;                     'face '(:background "orange red" :height anki-button-size)
+      ;;                     'face `(:background "orange red" :height ,anki-button-size)
       ;;                     'mouse-face 'mode-line-highlight
       ;;                     'keymap answer-map))
       ;; (insert (propertize (format " %s " (nth 1 mock-due-date))
       ;;                     'face 'bold))
 
       ;; (insert (propertize (format "%s"  "HARD")
-      ;;                     'face '(:background "grey"  :height anki-button-size)
+      ;;                     'face `(:background "grey"  :height ,anki-button-size)
       ;;                     'mouse-face 'mode-line-highlight
       ;;                     'keymap answer-map))
       ;; (insert (propertize (format " %s " (nth 1 mock-due-date))
       ;;                     'face 'bold))
       ;; (insert (propertize (format "%s"  "GOOD")
-      ;;                     'face '(:background "green"  :height anki-button-size)
+      ;;                     'face `(:background "green"  :height ,anki-button-size)
       ;;                     'mouse-face 'mode-line-highlight
       ;;                     'keymap answer-map))
       ;; (insert (propertize (format " %s " (nth 3 mock-due-date))
       ;;                     'face 'bold))
       ;; (insert (propertize (format "%s"  "EASY")
-      ;;                     'face '(:background "light sky blue" :height anki-button-size)
+      ;;                     'face `(:background "light sky blue" :height ,anki-button-size)
       ;;                     'mouse-face 'mode-line-highlight
       ;;                     'keymap answer-map))
       ;; (insert (propertize (format " %s " (nth 5 mock-due-date))
@@ -278,18 +278,18 @@ Optional argument INDEX is the number of anki in the list."
       ))
 
 (defun anki-insert-justify-text (text)
-  (let (beg end)
+  (let ((fill-column (window-total-width)) beg end)
     (setq beg (point))
     (insert text)
     (setq end (point))
-    (set-justification-left beg end)))
+    (set-justification-center beg end)))
 
 (defun anki-show-answer-button ()
   ;; insert show answer button
   (let ((show-answer-map (make-sparse-keymap)))
     (define-key show-answer-map [mouse-1] 'anki-show-answer-mouse-1)
     (anki-insert-justify-text (concat (propertize "SHOW ANSWER"
-                                'face '(:background "grey" :height anki-button-size)
+                                'face `(:background "grey" :height ,anki-button-size)
                                 'mouse-face 'mode-line-highlight
                                 'keymap show-answer-map) " " ))))
 
@@ -300,8 +300,9 @@ Optional argument INDEX is the number of anki in the list."
     (anki-show-answer-button)
     (setq beg (point))
     ;; (insert "<h1>Question</h1>")
-    (insert "<hr>")
+    (insert "<div>")
     (insert question)
+    (insert "</div>")
     (setq end (point))
     (put-text-property beg end 'question question)
     (anki-render-region beg end)
@@ -325,8 +326,9 @@ Optional argument INDEX is the number of anki in the list."
 
     (setq beg (point))
     ;; (insert "<h1>Answer</h1>")
-    (insert "<hr>")
+    (insert "<div>")
     (insert answer)
+    (insert "</div>")
     (setq end (point))
     (put-text-property beg end 'answer answer)
     (anki-render-region beg end)
