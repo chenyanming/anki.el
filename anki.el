@@ -61,11 +61,8 @@
 
 (defvar anki-mode-map
   (let ((map (make-sparse-keymap)))
-    ;; (define-key map "v" #'anki-validate)
-    ;; (define-key map "s" #'anki-play-audio)
     (define-key map "p" #'anki-previous)
     (define-key map "n" #'anki-next)
-    ;; (define-key map "t" #'anki-toggle-anki)
     (define-key map "r" #'anki-play-audio)
     (define-key map "l" #'anki-list-decks)
     (define-key map "0" #'anki-answer)
