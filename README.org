@@ -97,12 +97,12 @@ M-x anki-browser
 - ~f~ Flap Card (Toggle between Question and Answer)
 - ~r~ (Re)play audio
 - ~l~ List and switch deck
-- ~n/p~ Next Card (Only works on Blue card)
+- ~n/p~ Next Card (Only works if the current card is Blue Card. For Red or Green cards, you have to answer Red or Green Cards before study Blue cards.)
 - ~q~ Quit
-- ~1~ Answer with "Again", review again after 1 minute (Hard coded).
-- ~2~ Answer with "Hard", review again after 10 minutes (~anki-learn-sm2-steps~).
-- ~3~ Answer with "Good" (Graduating interval in days: ~anki-learn-sm2-graduating-interval~)
-- ~4~ Answer with "Easy" (More Easy interval in days: ~anki-learn-sm2-more-easy-interval~)
+- ~1~ Answer with "Again" (Review again after 1 minute: Hard coded)
+- ~2~ Answer with "Hard" (Review again after 10 minutes: ~anki-learn-sm2-steps~, default 10 minutes)
+- ~3~ Answer with "Good" (Graduating interval in days: ~anki-learn-sm2-graduating-interval~, default 1 day)
+- ~4~ Answer with "Easy" (More Easy interval in days: ~anki-learn-sm2-more-easy-interval~, default 4 days)
 
 Notice:
 1. ~anki.el~ does not modify the original anki database (at this moment), therefore, the review feature uses its own database: ~anki-core-database-file~.
@@ -110,7 +110,7 @@ Notice:
 3. If you want to insert/update/delete cards, please use official anki app (at this moment).
 
 * Header
-Header shows the current card status:
+The header in ~anki-mode~ shows the current card status:
 - Blue: New Cards
 - Red: Due Cards to be reviewed again (< 1 day)
 - Green: Due Cards to be reviewed (>= 1 day)
