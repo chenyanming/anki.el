@@ -61,8 +61,8 @@ time."
     (define-key map "q" #'anki-search-quit)
     (define-key map "j" #'anki-search-next-card)
     (define-key map "k" #'anki-search-previous-card)
-    (define-key map "\M-j" #'anki-search-preview-next-card)
-    (define-key map "\M-k" #'anki-search-preview-previous-card)
+    (define-key map "\M-n" #'anki-search-preview-next-card)
+    (define-key map "\M-p" #'anki-search-preview-previous-card)
     map)
   "Keymap for `anki-search-mode'.")
 
