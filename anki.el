@@ -282,7 +282,7 @@ Optional argument INDEX is the number of anki in the list."
     (setq beg (point))
     (insert text)
     (setq end (point))
-    (set-justification-center beg end)))
+    (set-justification-left beg end)))
 
 (defun anki-show-answer-button ()
   ;; insert show answer button
