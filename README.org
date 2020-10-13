@@ -97,7 +97,7 @@ M-x anki-browser
 - ~f~ Flap Card (Toggle between Question and Answer)
 - ~r~ (Re)play audio
 - ~l~ List and switch deck
-- ~n/p~ Next Card (Only works if the current card is Blue Card. For Red or Green cards, you have to answer Red or Green Cards before study Blue cards.)
+- ~n/p~ Next Card (Only works if the current card is Blue Card. For Red or Green cards, you have to answer Red or Green Cards before studying Blue cards.)
 - ~q~ Quit
 - ~1~ Answer with "Again" (Review again after 1 minute: Hard coded)
 - ~2~ Answer with "Hard" (Review again after 10 minutes: ~anki-learn-sm2-steps~, default 10 minutes)
@@ -108,6 +108,7 @@ Notice:
 1. ~anki.el~ does not modify the original anki database (at this moment), therefore, the review feature uses its own database: ~anki-core-database-file~.
 2. If you modify the anki database through the official anki app, you have to close the official app(Important), then ~M-x anki-search-update~ to re-read the anki database.
 3. If you want to insert/update/delete cards, please use official anki app (at this moment).
+4. ~M-x anki-db-current-deck-reschedule~ to reschedule the current deck (Delete all review logs of current deck).
 
 * Header
 The header in ~anki-mode~ shows the current card status:
