@@ -415,22 +415,51 @@ Argument QUERY-RESULT is the query result generate by sqlite."
                     (push (list string url beg end) collected-list)))))
         (nreverse collected-list)))))
 
+(defvar anki-audio-list nil)
+
 (defun anki-play-audio ()
   "Collect and play the audio in current buffer"
   (interactive)
   (let ((process (get-process "anki-audio-player")))
     (if (process-live-p process)
         (delete-process process)))
-  ;; TODO: Play more than 1 audio
-  (let ((sound (nth 1 (car (anki-core-audio-collect)))))
-    (when sound
-      (message "Playing...")
-      (if (and anki-audio-player sound)
-          (start-process-shell-command
-           "anki-audio-player" nil
-           (mapconcat 'identity
-                      `(,anki-audio-player
-                        ,@(delq nil (list (shell-quote-argument (expand-file-name sound))))) " "))))))
+  ;; play all audios
+  (setq anki-audio-list
+        (mapcar
+         (lambda (x) (nth 1 x))
+         (anki-core-audio-collect)))
+  (anki-play-audio-process-sentinel)
+  ;; play the first one audio
+  ;; (let ((sound (nth 1 (car (anki-core-audio-collect)))))
+  ;;   (when sound
+  ;;     (message "Playing...")
+  ;;     (if (and anki-audio-player sound)
+  ;;         (start-process-shell-command
+  ;;          "anki-audio-player" nil
+  ;;          (mapconcat 'identity
+  ;;                     `(,anki-audio-player
+  ;;                       ,@(delq nil (list (shell-quote-argument (expand-file-name sound))))) " ")))))
+  )
+
+(defun anki-play-audio-process-sentinel ()
+  (let ((sound (pop anki-audio-list)))
+    (if sound
+        (progn
+          (message "Playing...")
+          (set-process-sentinel (anki-play-audio-process sound) 'anki-play-audio-sentinel))
+      (message ""))))                   ; when playing finishes, print empty string
+
+(defun anki-play-audio-process (sound)
+  (start-process-shell-command
+   "anki-audio-player" nil
+   (mapconcat 'identity
+              `(,anki-audio-player
+                ,@(delq nil (list (shell-quote-argument (expand-file-name sound))))) " ")))
+
+(defun anki-play-audio-sentinel (p e)
+  (when (= 0 (process-exit-status p))
+    (anki-play-audio-process-sentinel)))
+
 
 (defun anki-replay-audio ()
   "Replay Audio If Possible."
