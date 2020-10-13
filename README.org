@@ -94,7 +94,7 @@ Enter anki search mode:
 M-x anki-browser
 #+END_SRC
 
-- ~f~ Flap Card (Toggle between Question and Answer)
+- ~f~ Flip Card (Toggle between Question and Answer)
 - ~r~ (Re)play audio
 - ~l~ List and switch deck
 - ~n/p~ Next Card (Only works if the current card is Blue Card. For Red or Green cards, you have to answer Red or Green Cards before studying Blue cards.)
