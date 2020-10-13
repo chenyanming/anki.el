@@ -296,9 +296,10 @@ Optional argument INDEX is the number of anki in the list."
 
 (defun anki-show-question (question)
   (setq anki-front-or-back nil)
-  (let (beg end)
+  (let ((shr-hr-line ?—) beg end)
     (anki-show-answer-button)
     (setq beg (point))
+    (insert "<hr>")
     ;; (insert "<h1>Question</h1>")
     (insert "<div>")
     (insert question)
@@ -320,11 +321,11 @@ Optional argument INDEX is the number of anki in the list."
 
 (defun anki-show-answer (answer)
   (setq anki-front-or-back t)
-  (let (beg end)
+  (let ((shr-hr-line ?—) beg end)
     ;; show button
     (anki-show-buttons anki-mock-due-date)
-
     (setq beg (point))
+    (insert "<hr>")
     ;; (insert "<h1>Answer</h1>")
     (insert "<div>")
     (insert answer)
