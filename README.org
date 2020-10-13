@@ -104,7 +104,10 @@ M-x anki-browser
 - ~3~ Answer with "Good" (Graduating interval in days: ~anki-learn-sm2-graduating-interval~)
 - ~4~ Answer with "Easy" (More Easy interval in days: ~anki-learn-sm2-more-easy-interval~)
 
-Notice: The review feature uses its own database: ~anki-core-database-file~.
+Notice:
+1. ~anki.el~ does not modify the original anki database (at this moment), therefore, the review feature uses its own database: ~anki-core-database-file~.
+2. If you modify the anki database through the official anki app, you have to close the official app(Important), then ~M-x anki-search-update~ to re-read the anki database.
+3. If you want to insert/update/delete cards, please use official anki app (at this moment).
 
 * Header
 Header shows the current card status:
