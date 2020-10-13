@@ -11,8 +11,10 @@
   - [[#require][require]]
   - [[#use-package][use-package]]
 - [[#usage][Usage]]
+- [[#header][Header]]
 - [[#related-packages][Related Packages]]
 - [[#newslogs][News/Logs]]
+  - [[#2020-10-13][=2020-10-13=]]
   - [[#2020-09-19][=2020-09-19=]]
   - [[#2020-09-14][=2020-09-14=]]
 
@@ -92,14 +94,31 @@ Enter anki search mode:
 M-x anki-browser
 #+END_SRC
 
+- ~f~ Flap Card (Toggle between Question and Answer)
 - ~r~ (Re)play audio
 - ~l~ List and switch deck
-- ~q~ Quit.
+- ~n/p~ Next Card (Only works on Blue card)
+- ~q~ Quit
+- ~1~ Answer with "Again", review again after 1 minute (Hard coded).
+- ~2~ Answer with "Hard", review again after 10 minutes (~anki-learn-sm2-steps~).
+- ~3~ Answer with "Good" (Graduating interval in days: ~anki-learn-sm2-graduating-interval~)
+- ~4~ Answer with "Easy" (More Easy interval in days: ~anki-learn-sm2-more-easy-interval~)
+
+* Header
+Header shows the current card status:
+Blue: New Cards
+Red: Due Cards to be review again (< 1 day)
+Green: Due Cards to be review (>= 1 day)
 
 * Related Packages
 - [[https://github.com/chenyanming/shrface][shrface]]: Enable org features on shr-rendered buffers, without the heaviness of org.
 
 * News/Logs
+
+** =2020-10-13=
+Version *0.3.0*:
+- Add Review Feature using SM2 algorithm.
+
 ** =2020-09-19=
 Version *0.2.0*:
 - New Features: ~anki~
