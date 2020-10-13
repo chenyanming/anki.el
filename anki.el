@@ -65,12 +65,10 @@
     (define-key map "n" #'anki-next)
     (define-key map "r" #'anki-play-audio)
     (define-key map "l" #'anki-list-decks)
-    (define-key map "0" #'anki-answer)
-    (define-key map "1" #'anki-answer)
-    (define-key map "2" #'anki-answer)
-    (define-key map "3" #'anki-answer)
-    (define-key map "4" #'anki-answer)
-    (define-key map "5" #'anki-answer)
+    (define-key map "1" #'anki-answer-again)
+    (define-key map "2" #'anki-answer-hard)
+    (define-key map "3" #'anki-answer-good)
+    (define-key map "4" #'anki-answer-easy)
     (define-key map "f" #'anki-flip-card)
     (define-key map (kbd "<RET>") #'anki-flip-card)
     (define-key map "q" #'anki-quit)
@@ -108,19 +106,12 @@
           (if (or anki-again-card-p anki-new-card-p)
               (propertize (number-to-string (- (anki-db-current-deck-total-due-card-number) (anki-db-current-deck-total-again-number))) 'face '(:foreground "green"))
             (propertize (number-to-string (- (anki-db-current-deck-total-due-card-number) (anki-db-current-deck-total-again-number))) 'face '(:foreground "green" :underline t)))
-
-          ;; (concat (propertize "r" 'face 'bold) (if anki-in-sequence ":in sequence" ":random"))
-          (concat (propertize "l" 'face 'bold) "ist")
-          (concat (propertize "r" 'face 'bold) "eplay")
-          ;; (if anki-loop-toggle (concat "(+" (number-to-string anki-loop-speed) "s) ") "")
-          ;; (concat (propertize "v" 'face 'bold) "alidate")
-          ;; (concat (propertize "s" 'face 'bold) "ay")
           (concat (propertize "f" 'face 'bold) "lip")
+          (concat (propertize "r" 'face 'bold) "eplay")
+          (concat (propertize "l" 'face 'bold) "ist")
           (concat (propertize "n" 'face 'bold) "ext")
           (concat (propertize "p" 'face 'bold) "revious")
-          (concat (propertize "q" 'face 'bold) "uit")
-          ;; (concat (number-to-string anki-number))
-          ))
+          (concat (propertize "q" 'face 'bold) "uit")))
 
 ;;;###autoload
 (defun anki (&optional index)
@@ -371,8 +362,44 @@ Optional argument INDEX is the number of anki in the list."
       (if (process-live-p process)
           (delete-process process)))))
 
+(defun anki-answer-again ()
+  "Answer the answer with again."
+  (interactive)
+  (if anki-front-or-back
+      (progn
+        (anki-learn-smart-reschedule 0)
+        (anki))
+    (anki-flip-card)))
+
+(defun anki-answer-hard ()
+  "Answer the answer with hard."
+  (interactive)
+  (if anki-front-or-back
+      (progn
+        (anki-learn-smart-reschedule 1)
+        (anki))
+    (anki-flip-card)))
+
+(defun anki-answer-good ()
+  "Answer the answer with good."
+  (interactive)
+  (if anki-front-or-back
+      (progn
+        (anki-learn-smart-reschedule 3)
+        (anki))
+    (anki-flip-card)))
+
+(defun anki-answer-easy ()
+  "Answer the answer with easy."
+  (interactive)
+  (if anki-front-or-back
+      (progn
+        (anki-learn-smart-reschedule 5)
+        (anki))
+    (anki-flip-card)))
+
 (defun anki-answer ()
-  "TODO: This function automatically recognizes the number"
+  "This function automatically recognizes the number"
   (interactive)
   (let* ((event last-command-event)
          (key (make-vector 1 event))
