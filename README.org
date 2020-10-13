@@ -109,8 +109,8 @@ Notice: The review feature uses its own database: ~anki-core-database-file~.
 * Header
 Header shows the current card status:
 - Blue: New Cards
-- Red: Due Cards to be review again (< 1 day)
-- Green: Due Cards to be review (>= 1 day)
+- Red: Due Cards to be reviewed again (< 1 day)
+- Green: Due Cards to be reviewed (>= 1 day)
 
 * Related Packages
 - [[https://github.com/chenyanming/shrface][shrface]]: Enable org features on shr-rendered buffers, without the heaviness of org.
