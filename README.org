@@ -104,6 +104,8 @@ M-x anki-browser
 - ~3~ Answer with "Good" (Graduating interval in days: ~anki-learn-sm2-graduating-interval~)
 - ~4~ Answer with "Easy" (More Easy interval in days: ~anki-learn-sm2-more-easy-interval~)
 
+Notice: The review feature uses its own database: ~anki-core-database-file~.
+
 * Header
 Header shows the current card status:
 - Blue: New Cards
