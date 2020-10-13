@@ -106,9 +106,9 @@ M-x anki-browser
 
 * Header
 Header shows the current card status:
-Blue: New Cards
-Red: Due Cards to be review again (< 1 day)
-Green: Due Cards to be review (>= 1 day)
+- Blue: New Cards
+- Red: Due Cards to be review again (< 1 day)
+- Green: Due Cards to be review (>= 1 day)
 
 * Related Packages
 - [[https://github.com/chenyanming/shrface][shrface]]: Enable org features on shr-rendered buffers, without the heaviness of org.
