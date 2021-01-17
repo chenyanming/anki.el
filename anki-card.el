@@ -518,8 +518,9 @@ internal ones."
         ;; `cl-letf' to override `shr-tag-img' with a function that
         ;; might call `shr-tag-img' again
         (funcall anki-original-shr-tag-img-function dom url)
-      (setq url (expand-file-name (anki-urldecode url)))
-      (anki-insert-image url alt))))
+      (when (stringp (anki-urldecode url))
+        (setq url (expand-file-name (anki-urldecode url)))
+        (anki-insert-image url alt)))))
 
 (defun anki-insert-image (path alt)
   "Insert an image for PATH at point, falling back to ALT.
