@@ -391,7 +391,7 @@ Returns a list: (INTERVAL REPEATS EF FAILURES MEAN TOTAL-REPEATS OFMATRIX), wher
   (let ((due-data (nth 3 (car (anki-core-sql `[:select [ROWID *] :from revlog :where id :like ,(concat "%%" id "%%") :order-by ROWID :desc :limit 1])))))
     (if due-data
         due-data
-      (copy-list anki-learn-initial-repetition-state))))
+      (cl-copy-list anki-learn-initial-repetition-state))))
 
 (defun anki-learn-get-due-date (id)
   "TODO: Get due date based on card ID."
