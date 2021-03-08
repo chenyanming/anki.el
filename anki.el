@@ -3,7 +3,7 @@
 ;; Copyright (C) 2020 Damon Chan
 
 ;; Author: Damon Chan <elecming@gmail.com>
-;; URL: https://github.com/chenyanming/calibredb.el
+;; URL: https://github.com/chenyanming/anki.el
 ;; Keywords: tools
 ;; Created: 14 Sep 2020
 ;; Version: 0.3.0
