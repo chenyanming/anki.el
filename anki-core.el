@@ -93,8 +93,7 @@ ON cards.nid = notes.id "
 
 (defconst anki-core-db-version 1)
 
-(defcustom anki-core-database-file
-  (expand-file-name "anki-database.sqlite"  anki-collection-dir)
+(defcustom anki-core-database-file nil
   "The file used to store the anki.el database."
   :group 'anki
   :type 'file)
@@ -105,7 +104,9 @@ ON cards.nid = notes.id "
 (defun anki-core-db ()
   "Connect or create database."
   (unless (and anki-core-db-connection (emacsql-live-p anki-core-db-connection))
-    (setq anki-core-db-connection (emacsql-sqlite (expand-file-name "anki-database.sqlite"  anki-collection-dir)))
+    (setq anki-core-db-connection (emacsql-sqlite (if anki-core-database-file
+                                                      anki-core-database-file
+                                                      (expand-file-name "anki-database.sqlite"  anki-collection-dir))))
 
     ;; create id table
     ;; (emacsql anki-core-db-connection [:create-table :if-not-exists id ([id])])
